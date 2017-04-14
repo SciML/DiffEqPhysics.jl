@@ -1,5 +1,9 @@
 module DiffEqPhysics
 
-# package code goes here
+using DiffEqBase
+
+include("problems.jl")
+
+export HamiltonianProblem, LagrangianProblem
 
 end # module
