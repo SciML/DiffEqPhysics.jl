@@ -6,6 +6,6 @@ using DiffEqBase
 
 include("problems.jl")
 
-export HamiltonianProblem, LagrangianProblem
+export HamiltonianProblem, LagrangianProblem, NBodyProblem
 
 end # module
