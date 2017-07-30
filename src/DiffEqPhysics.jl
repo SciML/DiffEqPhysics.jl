@@ -2,10 +2,10 @@ __precompile__()
 
 module DiffEqPhysics
 
-using DiffEqBase
+using OrdinaryDiffEq, ForwardDiff
 
 include("problems.jl")
 
-export HamiltonianProblem, LagrangianProblem
+export HamiltonianProblem, LagrangianProblem, NBodyProblem
 
 end # module
