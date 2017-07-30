@@ -2,7 +2,7 @@ __precompile__()
 
 module DiffEqPhysics
 
-using OrdinaryDiffEq
+using OrdinaryDiffEq, ForwardDiff
 
 include("problems.jl")
 
