@@ -1,4 +1,5 @@
 julia 0.6
-DiffEqBase 0.15.0
-OrdinaryDiffEq 2.10.0
+DiffEqBase 1.15.0
+OrdinaryDiffEq 2.11.0
+Reexport
 ForwardDiff 0.5.0

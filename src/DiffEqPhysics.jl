@@ -2,9 +2,11 @@ __precompile__()
 
 module DiffEqPhysics
 
-using OrdinaryDiffEq, ForwardDiff
+using Reexport
+@reexport using DiffEqBase, OrdinaryDiffEq, ForwardDiff
 
-include("problems.jl")
+include("problem.jl")
+include("hamiltonian.jl")
 
 export HamiltonianProblem, LagrangianProblem, NBodyProblem
 
