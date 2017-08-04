@@ -7,7 +7,8 @@ using Reexport
 
 include("nbody.jl")
 include("hamiltonian.jl")
+include("plot.jl")
 
-export HamiltonianProblem, LagrangianProblem, NBodyProblem
+export HamiltonianProblem, LagrangianProblem, NBodyProblem, plot_orbits
 
 end # module
