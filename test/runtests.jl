@@ -19,5 +19,5 @@ q0, p0 = [rand(5) for i in 1:2]
 acc = (t, x, v, dv) -> ForwardDiff.gradient!(dv, x->-H(x,v), x)
 vel = (t, x, v, dx) -> ForwardDiff.gradient!(dx, v-> H(x,v), v)
 prob2  = HamiltonianProblem(H, q0, p0, (0.,10.))
-prob_2 = ODEProblem((vel,acc), (q0,p0), (0.,10.))
+prob_2 = ODEProblem(DynamicalODEFunction{true}(vel,acc), (q0,p0), (0.,10.))
 @test test_solve(prob2, prob_2)

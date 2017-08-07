@@ -16,7 +16,7 @@ function HamiltonianProblem{T}(H,q0,p0,tspan;kwargs...) where T
             ForwardDiff.derivative(x->-H(x, v), x)
         end
 
-        return ODEProblem{T}((dq,dp), (q0,p0), tspan,
+        return ODEProblem{T}(DynamicalODEFunction{T}(dq,dp), (q0,p0), tspan,
                            HamiltonianProblem{false}(); kwargs...)
     else
         dq = function (t,x,v,dx)
@@ -26,7 +26,7 @@ function HamiltonianProblem{T}(H,q0,p0,tspan;kwargs...) where T
             ForwardDiff.gradient!(dv, x->-H(x, v), x)
         end
 
-        return ODEProblem{T}((dq,dp), (q0,p0), tspan,
-                              HamiltonianProblem{true}(); kwargs...)
+        return ODEProblem{T}(DynamicalODEFunction{T}(dq,dp), (q0,p0),
+                             tspan,HamiltonianProblem{true}(); kwargs...)
     end
 end
