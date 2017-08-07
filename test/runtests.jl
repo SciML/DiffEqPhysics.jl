@@ -1,4 +1,4 @@
-using DiffEqPhysics
+using DiffEqPhysics, ForwardDiff
 using Base.Test
 
 println("====    HamiltonianProblem Test    ====")

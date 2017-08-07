@@ -3,7 +3,8 @@ __precompile__()
 module DiffEqPhysics
 
 using Reexport
-@reexport using DiffEqBase, OrdinaryDiffEq, ForwardDiff
+@reexport using DiffEqBase, OrdinaryDiffEq
+using ForwardDiff, StaticArrays
 
 include("nbody.jl")
 include("hamiltonian.jl")

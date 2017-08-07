@@ -1,25 +1,32 @@
 using OrdinaryDiffEq, ForwardDiff
 
-function HamiltonianProblem(H,q0::Real,p0::Real,tspan::Tuple{T,T};kwargs...) where T<:Real
-    @inline function dq(t,x,v)
-        ForwardDiff.derivative(v->H(x, v), v)
-    end
-    @inline function dp(t,x,v)
-        ForwardDiff.derivative(x->-H(x, v), x)
-    end
+struct HamiltonianProblem{iip} <: AbstractDynamicalODEProblem end
 
-    return ODEProblem((dq,dp), (q0,p0), tspan; kwargs...)
+function HamiltonianProblem(H,q0,p0,tspan;kwargs...)
+  iip = (typeof(q0) <: AbstractArray) && !(typeof(q0) <: SArray)
+  HamiltonianProblem{iip}(H,q0,p0,tspan;kwargs...)
 end
 
-function HamiltonianProblem(H,q0::AbstractVector,p0::AbstractVector,tspan::Tuple{T,T};kwargs...) where T<:Real
-    @assert length(q0) == length(p0)
-    @inline function dq(t,x,v,dx)
-        ForwardDiff.gradient!(dx, v-> H(x, v), v)
-    end
-    @inline function dp(t,x,v,dv)
-        ForwardDiff.gradient!(dv, x->-H(x, v), x)
-    end
+function HamiltonianProblem{T}(H,q0,p0,tspan;kwargs...) where T
+    if T == false
+        dq = function (t,x,v)
+            ForwardDiff.derivative(v->H(x, v), v)
+        end
+        dp = function (t,x,v)
+            ForwardDiff.derivative(x->-H(x, v), x)
+        end
 
-    return ODEProblem((dq,dp), (q0,p0), tspan; kwargs...)
+        return ODEProblem{T}((dq,dp), (q0,p0), tspan,
+                           HamiltonianProblem{false}(); kwargs...)
+    else
+        dq = function (t,x,v,dx)
+            ForwardDiff.gradient!(dx, v-> H(x, v), v)
+        end
+        dp = function (t,x,v,dv)
+            ForwardDiff.gradient!(dv, x->-H(x, v), x)
+        end
+
+        return ODEProblem{T}((dq,dp), (q0,p0), tspan,
+                              HamiltonianProblem{true}(); kwargs...)
+    end
 end
-

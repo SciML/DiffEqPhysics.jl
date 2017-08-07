@@ -33,6 +33,5 @@ function NBodyProblem(potential,mass_matrix,u0,v0,tspan; kwargs...)
             dv[i] /= -mass_matrix.diag[ind(i)]
         end
     end
-    SecondOrderODEProblem(acceleration!, u0, v0, tspan; kwargs...)
+    SecondOrderODEProblem{true}(acceleration!, u0, v0, tspan; kwargs...)
 end
-
