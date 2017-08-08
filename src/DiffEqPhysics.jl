@@ -3,7 +3,7 @@ __precompile__()
 module DiffEqPhysics
 
 using Reexport
-@reexport using DiffEqBase, OrdinaryDiffEq
+@reexport using DiffEqBase, OrdinaryDiffEq, RecursiveArrayTools
 using ForwardDiff, StaticArrays
 
 include("nbody.jl")

@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, ForwardDiff
+using OrdinaryDiffEq, ForwardDiff, RecursiveArrayTools
 
 function NBodyProblem(potential,mass_matrix,u0,v0,tspan; kwargs...)
     # check number of particles
@@ -6,9 +6,19 @@ function NBodyProblem(potential,mass_matrix,u0,v0,tspan; kwargs...)
     @assert isdiag(mass_matrix)
     ind = i -> div(i-1, dim) + 1
     N   = length(u0)
-    dim = length(u0.x)
+    dim = div(N, size(mass_matrix, 1))
     @assert dim*size(mass_matrix, 1) == N
     @assert dim ∈ (2, 3)
+
+    if dim == 3
+        divd = N÷3
+        u0 = ArrayPartition(u0[1:3:end], u0[2:3:end],        u0[3:3:end])
+        v0 = ArrayPartition(v0[1:divd],  v0[(divd+1):2divd], v0[(2divd+1):end])
+    else
+        divd = N÷2
+        u0 = ArrayPartition(u0[1:2:end], u0[2:2:end])
+        v0 = ArrayPartition(v0[1:divd],  v0[(divd+1):end])
+    end
 
     f_wrapper(t,u) = potential(t,u.x...,mass_matrix)
 
