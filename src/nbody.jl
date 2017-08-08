@@ -1,13 +1,12 @@
 using OrdinaryDiffEq, ForwardDiff, RecursiveArrayTools
 
-function NBodyProblem(potential,mass_matrix,u0,v0,tspan; kwargs...)
+function NBodyProblem(potential,mass,u0,v0,tspan; kwargs...)
     # check number of particles
     @assert length(u0) == length(v0)
-    @assert isdiag(mass_matrix)
     ind = i -> div(i-1, dim) + 1
     N   = length(u0)
-    dim = div(N, size(mass_matrix, 1))
-    @assert dim*size(mass_matrix, 1) == N
+    dim = div(N, length(mass))
+    @assert dim*length(mass) == N
     @assert dim ∈ (2, 3)
 
     if dim == 3
@@ -20,7 +19,7 @@ function NBodyProblem(potential,mass_matrix,u0,v0,tspan; kwargs...)
         v0 = ArrayPartition(v0[1:divd],  v0[(divd+1):end])
     end
 
-    f_wrapper(t,u) = potential(t,u.x...,mass_matrix)
+    f_wrapper(t,u) = potential(t,u.x...,mass)
 
     function acceleration!(t, x, v, dv)
         N = length(v)
@@ -29,7 +28,7 @@ function NBodyProblem(potential,mass_matrix,u0,v0,tspan; kwargs...)
         cfg = ForwardDiff.GradientConfig(fun, u0, ForwardDiff.Chunk{config_length}())
         ForwardDiff.gradient!(dv, fun, x, cfg)
         for i in eachindex(dv)
-            dv[i] /= -mass_matrix.diag[ind(i)]
+            dv[i] /= -mass[ind(i)]
         end
     end
     SecondOrderODEProblem{true}(acceleration!, u0, v0, tspan; kwargs...)

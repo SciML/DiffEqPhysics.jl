@@ -39,8 +39,8 @@ end
 
 prob = SecondOrderODEProblem(acceleration, pos, vel, tspan)
 
-mass_matrix = Diagonal([1.00000597682, 0.000954786104043, 0.000285583733151, 0.0000437273164546, 0.0000517759138449, 1/1.3e8])
-potential(t, x, y, z, M) = -G*∑(i->∑(j->(M[i+1,i+1]*M[j+1,j+1])/sqrt((x[i+1]-x[j+1])^2 + (y[i+1]-y[j+1])^2 + (z[i+1]-z[j+1])^2), 0:i-1), 1:N)
-nprob = NBodyProblem(potential, mass_matrix, pos, vel, tspan)
+mass = [1.00000597682, 0.000954786104043, 0.000285583733151, 0.0000437273164546, 0.0000517759138449, 1/1.3e8]
+potential(t, x, y, z, M) = -G*∑(i->∑(j->(M[i+1]*M[j+1])/sqrt((x[i+1]-x[j+1])^2 + (y[i+1]-y[j+1])^2 + (z[i+1]-z[j+1])^2), 0:i-1), 1:N)
+nprob = NBodyProblem(potential, mass, pos, vel, tspan)
 
 @test_broken test_solve(prob, nprob)
