@@ -1,3 +1,5 @@
+using Plots
+
 function plot_orbits(sol;body_names=nothing,dim=3,kwargs...)
     @assert dim ∈ (2, 3)
     N = length(sol.u[1].x[1]) ÷ dim
