@@ -7,6 +7,8 @@ function HamiltonianProblem(H,q0,p0,tspan;kwargs...)
   HamiltonianProblem{iip}(H,q0,p0,tspan;kwargs...)
 end
 
+struct PhysicsTag end
+
 function HamiltonianProblem{T}(H,q0,p0,tspan;kwargs...) where T
     if T == false
         dq = function (t,x,v)
@@ -19,11 +21,16 @@ function HamiltonianProblem{T}(H,q0,p0,tspan;kwargs...) where T
         return ODEProblem{T}(DynamicalODEFunction{T}(dq,dp), (q0,p0), tspan,
                            HamiltonianProblem{false}(); kwargs...)
     else
+        cfg = ForwardDiff.GradientConfig(PhysicsTag(), p0)
         dq = function (t,x,v,dx)
-            ForwardDiff.gradient!(dx, v-> H(x, v), v)
+            fun1 = v-> H(x, v)
+            ForwardDiff.gradient!(dx, fun1, v, cfg, Val{false}())
         end
+
+        cfg2 = ForwardDiff.GradientConfig(PhysicsTag(), q0)
         dp = function (t,x,v,dv)
-            ForwardDiff.gradient!(dv, x->-H(x, v), x)
+            fun2 = x->-H(x, v)
+            ForwardDiff.gradient!(dv, fun2, x, cfg2, Val{false}())
         end
 
         return ODEProblem{T}(DynamicalODEFunction{T}(dq,dp), (q0,p0),
