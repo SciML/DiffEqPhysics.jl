@@ -1,46 +1,40 @@
-using DiffEqPhysics, ForwardDiff, Base.Test
+using DiffEqPhysics, ForwardDiff, Base.Test, RecursiveArrayTools
 
 G = 2.95912208286e-4
-M = Diagonal(repeat([1.00000597682, 0.000954786104043, 0.000285583733151,
-        0.0000437273164546, 0.0000517759138449, 1/1.3e8], inner=3))       # repeat each mass three time
-                                                                          # becasue there are 3 degrees
-                                                                          # of freedom for each planet/sun
-
-invM = inv(M).diag    # the diagonal of the inverse of the mass matrix
-                      # will explain it later
-
+M = [1.00000597682, 0.000954786104043, 0.000285583733151, 0.0000437273164546, 0.0000517759138449, 1/1.3e8]
+invM = inv.(M)
 planets = ["Sun", "Jupiter", "Saturn", "Uranus", "Neptune", "Pluto"]
 
-pos = [
-    0.,0.,0.,                              -3.5023653,-3.8169847,-1.5507963,
-    9.0755314,-3.0458353,-1.6483708,       8.3101420,-16.2901086,-7.2521278,
-    11.4707666,-25.7294829,-10.8169456,    -15.5387357,-25.2225594,-3.1902382
-]
-vel = [
-    0,0,0,                               0.00565429,-0.00412490,-0.00190589,
-    0.00168318,0.00483525,0.00192462,    0.00354178,0.00137102,0.00055029,
-    0.00288930,0.00114527,0.00039677,    0.00276725, -0.00170702, -0.00136504
-]
+pos_x = [0.0,-3.5023653,9.0755314,8.3101420,11.4707666,-15.5387357]
+pos_y = [0.0,-3.8169847,-3.0458353,-16.2901086,-25.7294829,-25.2225594]
+pos_z = [0.0,-1.5507963,-1.6483708,-7.2521278,-10.8169456,-3.1902382]
+pos = ArrayPartition(pos_x,pos_y,pos_z)
 
-tspan = (0.,20)
+vel_x = [0.0,0.00565429,0.00168318,0.00354178,0.00288930,0.00276725]
+vel_y = [0.0,-0.00412490,0.00483525,0.00137102,0.00114527,-0.00170702]
+vel_z = [0.0,-0.00190589,0.00192462,0.00055029,0.00039677,-0.00136504]
+vel = ArrayPartition(vel_x,vel_y,vel_z)
+
+tspan = (0.,200_000)
 
 const ∑ = sum
-const N = 5
+const N = 6
+potential(t, x, y, z, M) = -G*∑(i->∑(j->(M[i]*M[j])/sqrt((x[i]-x[j])^2 + (y[i]-y[j])^2 + (z[i]-z[j])^2), 1:i-1), 2:N)
+nprob = NBodyProblem(potential, M, pos, vel, tspan)
+sol = solve(nprob,Yoshida6(), dt=100)
 
-ø = i -> (3i+1):(3(i+1))    # Generate indices like 1:3, 4:6 ...
-V(q) = -G*∑(i->∑(j->(M[3i+1,3i+1]*M[3j+1,3j+1])/norm(q[ø(i)]-q[ø(j)]), 0:i-1), 1:N)
-
-function acceleration(t, x, v, dv)
-    ForwardDiff.gradient!(dv, V, x)
-    for i in eachindex(dv)
-        dv[i] *= -invM[i]
-    end
+# Make sure the distances from the sun stay small enough
+f = (x,y,z,j)->sqrt((x[1]-x[j])^2 + (y[1]-y[j])^2 + (z[1]-z[j])^2)
+for i in 1:length(sol)
+    x,y,z = sol[i].x[1].x
+    @test f(x,y,z,2) < 6
+    @test f(x,y,z,3) < 10.5
+    @test f(x,y,z,4) < 21
+    @test f(x,y,z,5) < 32
+    @test f(x,y,z,6) < 50
 end
 
-prob = SecondOrderODEProblem(acceleration, pos, vel, tspan)
-
-mass = [1.00000597682, 0.000954786104043, 0.000285583733151, 0.0000437273164546, 0.0000517759138449, 1/1.3e8]
-potential(t, x, y, z, M) = -G*∑(i->∑(j->(M[i+1]*M[j+1])/sqrt((x[i+1]-x[j+1])^2 + (y[i+1]-y[j+1])^2 + (z[i+1]-z[j+1])^2), 0:i-1), 1:N)
-nprob = NBodyProblem(potential, mass, pos, vel, tspan)
-
-@test_broken test_solve(prob, nprob)
+#=
+using Plots; plotly()
+orbitplot(sol,body_names=planets)
+=#

@@ -4,7 +4,7 @@ module DiffEqPhysics
 
 using Reexport
 @reexport using DiffEqBase, OrdinaryDiffEq, RecursiveArrayTools
-using ForwardDiff, StaticArrays
+using ForwardDiff, StaticArrays, RecipesBase
 
 include("nbody.jl")
 include("hamiltonian.jl")
