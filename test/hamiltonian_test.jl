@@ -1,4 +1,4 @@
-using DiffEqPhysics, ForwardDiff
+using DiffEqPhysics, ForwardDiff, StaticArrays
 using Base.Test
 
 println("====    HamiltonianProblem Test    ====")
@@ -9,6 +9,16 @@ acc      = (t, x, v) -> ForwardDiff.derivative(x->-H(x,v[1]), x[1])
 vel      = (t, x, v) -> ForwardDiff.derivative(v-> H(x[1],v), v[1])
 
 prob1    = HamiltonianProblem(H, q0, p0, (0.,10.))
+prob_1   = DynamicalODEProblem(vel,acc,q0,p0, (0.,10.))
+@test test_solve(prob1, prob_1)
+
+println("====   Static Vector case test      ====")
+q0 = @SVector rand(2)
+p0 = @SVector rand(2)
+H(θ, dθ) = dθ[1]/2 + dθ[2]/2 - 9.8*cos(θ[1]) - 9.8*cos(θ[2])
+prob1    = HamiltonianProblem(H, q0, p0, (0.,10.))
+acc      = (t, x, v) -> ForwardDiff.gradient(x->-H(x,v), x)
+vel      = (t, x, v) -> ForwardDiff.gradient(v-> H(x,v), v)
 prob_1   = DynamicalODEProblem(vel,acc,q0,p0, (0.,10.))
 @test test_solve(prob1, prob_1)
 

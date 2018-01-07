@@ -11,15 +11,27 @@ struct PhysicsTag end
 
 function HamiltonianProblem{T}(H,q0,p0,tspan;kwargs...) where T
     if T == false
-        dq = function (t,x,v)
-            ForwardDiff.derivative(v->H(x, v), v)
-        end
-        dp = function (t,x,v)
-            ForwardDiff.derivative(x->-H(x, v), x)
-        end
+        if typeof(q0) <: Number
+            dq = function (t,x,v)
+                ForwardDiff.derivative(v->H(x, v), v)
+            end
+            dp = function (t,x,v)
+                ForwardDiff.derivative(x->-H(x, v), x)
+            end
 
-        return ODEProblem{T}(DynamicalODEFunction{T}(dq,dp), (q0,p0), tspan,
-                           HamiltonianProblem{false}(); kwargs...)
+            return ODEProblem{T}(DynamicalODEFunction{T}(dq,dp), (q0,p0), tspan,
+                               HamiltonianProblem{false}(); kwargs...)
+        else
+            dq = function (t,x,v)
+                ForwardDiff.gradient(v->H(x, v), v)
+            end
+            dp = function (t,x,v)
+                ForwardDiff.gradient(x->-H(x, v), x)
+            end
+
+            return ODEProblem{T}(DynamicalODEFunction{T}(dq,dp), (q0,p0), tspan,
+                               HamiltonianProblem{false}(); kwargs...)
+        end
     else
         let cfg = ForwardDiff.GradientConfig(PhysicsTag(), p0), cfg2 = ForwardDiff.GradientConfig(PhysicsTag(), q0)
             dq = function (t,x,v,dx)
