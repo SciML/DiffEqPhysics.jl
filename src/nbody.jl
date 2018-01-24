@@ -1,6 +1,6 @@
 using OrdinaryDiffEq, ForwardDiff, RecursiveArrayTools
 
-function NBodyProblem(potential,M,u0,v0,tspan; kwargs...)
+function NBodyProblem(potential,M,u0,v0,tspan,p=nothing; kwargs...)
     # check number of particles
     @assert length(u0) == length(v0)
     ind = i -> div(i-1, dim) + 1
@@ -9,21 +9,22 @@ function NBodyProblem(potential,M,u0,v0,tspan; kwargs...)
     @assert dim*length(M) == N
     @assert dim ∈ (2, 3)
 
-    let fun = FWrapper{typeof(potential),typeof(tspan[1]),typeof(M)}(potential,tspan[1],M), cfg = ForwardDiff.GradientConfig(fun, u0)
-        function acceleration!(t, x, v, dv)
+    let fun = FWrapper{typeof(potential),typeof(tspan[1]),typeof(M),typeof(p)}(potential,tspan[1],M,p), cfg = ForwardDiff.GradientConfig(fun, u0)
+        function acceleration!(dv,x,v,p,t)
             fun.t = t
             ForwardDiff.gradient!(dv, fun, x, cfg)
             for x in dv.x
                 x ./= -M
             end
         end
-        return SecondOrderODEProblem{true}(acceleration!, u0, v0, tspan; kwargs...)
+        return SecondOrderODEProblem{true}(acceleration!, u0, v0, tspan, p; kwargs...)
     end
 end
 
-mutable struct FWrapper{F,T,MType}
+mutable struct FWrapper{F,T,MType,P}
     f::F
     t::T
     M::MType
+    p::P
 end
-(f::FWrapper)(u) = f.f(f.t,u.x...,f.M)
+(f::FWrapper)(u) = f.f(f.p,f.t,u.x...,f.M)

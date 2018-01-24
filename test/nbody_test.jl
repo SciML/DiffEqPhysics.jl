@@ -19,7 +19,7 @@ tspan = (0.,200_000)
 
 const ∑ = sum
 const N = 6
-potential(t, x, y, z, M) = -G*∑(i->∑(j->(M[i]*M[j])/sqrt((x[i]-x[j])^2 + (y[i]-y[j])^2 + (z[i]-z[j])^2), 1:i-1), 2:N)
+potential(p,t, x, y, z, M) = -G*∑(i->∑(j->(M[i]*M[j])/sqrt((x[i]-x[j])^2 + (y[i]-y[j])^2 + (z[i]-z[j])^2), 1:i-1), 2:N)
 nprob = NBodyProblem(potential, M, pos, vel, tspan)
 sol = solve(nprob,Yoshida6(), dt=100)
 
