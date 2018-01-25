@@ -1,6 +1,6 @@
 using OrdinaryDiffEq, ForwardDiff, RecursiveArrayTools
 
-function NBodyProblem(potential,M,u0,v0,tspan,p=nothing; kwargs...)
+function NBodyProblem(potential,M,v0,u0,tspan,p=nothing; kwargs...)
     # check number of particles
     @assert length(u0) == length(v0)
     ind = i -> div(i-1, dim) + 1
@@ -10,14 +10,14 @@ function NBodyProblem(potential,M,u0,v0,tspan,p=nothing; kwargs...)
     @assert dim ∈ (2, 3)
 
     let fun = FWrapper{typeof(potential),typeof(tspan[1]),typeof(M),typeof(p)}(potential,tspan[1],M,p), cfg = ForwardDiff.GradientConfig(fun, u0)
-        function acceleration!(dv,x,v,p,t)
+        function acceleration!(dv,v,x,p,t)
             fun.t = t
             ForwardDiff.gradient!(dv, fun, x, cfg)
             for x in dv.x
                 x ./= -M
             end
         end
-        return SecondOrderODEProblem{true}(acceleration!, u0, v0, tspan, p; kwargs...)
+        return SecondOrderODEProblem{true}(acceleration!, v0, u0, tspan, p; kwargs...)
     end
 end
 
