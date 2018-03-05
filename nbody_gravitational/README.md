@@ -24,7 +24,7 @@ tspan = (0.0, 1111150.0);
 
 Solving gravitational problem one needs to specify the gravitational constant G.
 ```julia
-grav_const = 6.673e-11
+G = 6.673e-11
 ```
 
 In fact, now we have enough parameters to create an NBodyGravProblem object:
