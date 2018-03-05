@@ -10,7 +10,7 @@ struct MassBody{mType, cType}
     r :: SVector{3, cType}
     v :: SVector{3, cType}
     
-    function MassBody{mType,cType}(m::mType,r::AbstractArray{cType,1}, v::AbstractArray{cType,1})
+    function MassBody{mType,cType}(m::mType, r::SVector{3, cType}, v::SVector{3, cType})
         @assert length(r)==length(v) "The length of the position (r) and velocity (v) components should match"
         new(m,r,v)
     end
@@ -104,7 +104,7 @@ end
 
 
 function plot_xy_trailing(solution::ODESolution, path::AbstractString; ntrail::Int = 3, duration::AbstractFloat = 3.0)
-    # ntrail - number of points for displaing a trailing path; the trail will correspond to the velocity of a body
+    # ntrail - number of points for displaying a trailing path; the trail will correspond to the velocity of a body
     fps = 15
     n = Int(length(solution[1])/6)
     tmax = maximum(solution.t);
