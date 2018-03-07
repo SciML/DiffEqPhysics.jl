@@ -1,7 +1,7 @@
 # Attempt to implement a solution to the N-body problem
 This is the famous 3-body choreography called the figure 8, evidently reflecting the shape of the bodies' orbits.
-![A gif with the figure 8](./anim_eight_scattering.gif)
 
+<img src="./anim_eight_scattering.gif" alt="A gif with the figure 8" style="width: 50px;"/>
 
 ## Usings
 ```julia
