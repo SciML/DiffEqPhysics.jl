@@ -1,7 +1,7 @@
 # Attempt to implement a solution to the N-body problem
 This is the famous 3-body choreography called the figure 8, evidently reflecting the shape of the bodies' orbits.
 
-<img src="./anim_eight_scattering.gif" alt="A gif with the figure 8" style="width: 50px;"/>
+<img src="./anim_eight_scattering.gif" alt="A gif with the figure 8" width="350"/>
 
 ## Usings
 ```julia
@@ -43,11 +43,11 @@ And, finally, we plot our solution showing two equal bodies rotating on the same
 plot_xy_scattering(solution,"./anim_two_boddies_scattering.gif")
 ```
 
-![Here should appear a gif of rotating bodies](./anim_two_boddies_scattering.gif)
+<img src="./anim_two_boddies_scattering.gif" alt="Here should appear a gif of rotating bodies" width="350"/>
 
 There is another type of gif-plots for moving objects. Imagine, we want to observe only the moving bodies without trajectory curves but with a slight hint for their orbtis. In this case we need to build a trailing plot:
 ```julia
 plot_xy_trailing(solution, "./anim_two_boddies_trailing.gif", ntrail = 3, duration = 3.0)
 ```
 
-![Here should appear another gif of rotating bodies](./anim_two_boddies_trailing.gif)
+<img src="./anim_two_boddies_trailing.gif" alt="Here should appear another gif of rotating bodies" width="350"/>
