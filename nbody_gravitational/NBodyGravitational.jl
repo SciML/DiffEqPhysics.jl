@@ -73,9 +73,9 @@ begin
 end
 
 import DiffEqBase.solve
-solve(x::NBodyGravProblem) = 
+solve(x::NBodyGravProblem; kwargs...) = 
 begin
-    return DiffEqBase.solve(convert(ODEProblem,x), alg_hints=[:stiff])
+    return DiffEqBase.solve(convert(ODEProblem,x); alg_hints=[:stiff], kwargs...)
 end
 
 function plot_xy_scattering(solution::ODESolution, path::AbstractString, duration::AbstractFloat = 3.0)
