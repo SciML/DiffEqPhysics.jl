@@ -2,6 +2,7 @@
 This is the famous 3-body choreography called the figure 8, evidently reflecting the shape of the bodies' orbits.
 
 <img src="./anim_eight_scattering.gif" alt="A gif with the figure 8" width="350"/>
+<img src="./anim_simos_5_scattering.gif" alt="A gif for 5-body animation" width="350" hspace="10"/>
 
 ## Usings
 ```julia
@@ -12,8 +13,8 @@ using NBodyGravitational, DifferentialEquations, Plots, StaticArrays
 In order to create bodies/particles for the problem, one needs to use the MassBody structure and its constructor, which accepts mass, initial coordinates and velocity of the body.
 
 ```julia
-body1 = MassBody(2.0, SVector(0.0,1.0,0.0), SVector(5.775e-6,0.0,0.0))
-body2 = MassBody(2.0, SVector(0.0,-1.0,0.0), SVector(-5.775e-6,0.0,0.0))
+body1 = MassBody(2.0, [0.0, 1.0, 0.0], [ 5.775e-6, 0.0, 0.0])
+body2 = MassBody(2.0, [0.0,-1.0, 0.0], [-5.775e-6, 0.0, 0.0])
 ```
 
 Usually we solve an n-body problem for a certain period of time:
