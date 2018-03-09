@@ -1,5 +1,5 @@
 # Attempt to implement a solution to the N-body problem
-This is the famous 3-body choreography called the figure 8, evidently reflecting the shape of the bodies' orbits.
+This is a 5-body chain choreography, evidently reflecting the shape of the bodies' orbits.
 
 <img src="./anim_simos_5_scattering.gif" alt="A gif for 5-body animation" width="350"/>
 
