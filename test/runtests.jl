@@ -5,3 +5,4 @@ test_solve(prob...) = mapreduce(p->solve(p, VelocityVerlet(), dt=1//2).u, ==, pr
 
 include("hamiltonian_test.jl")
 include("nbody_test.jl")
+include("../nbody_gravitational/test.jl")

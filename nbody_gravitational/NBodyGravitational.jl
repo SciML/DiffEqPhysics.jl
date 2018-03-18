@@ -1,9 +1,6 @@
 module NBodyGravitational
 
-using DiffEqBase, DifferentialEquations, StaticArrays, Plots, StaticArrays
-
-
-grav_const = 6.673e-11
+using DiffEqBase, DifferentialEquations, StaticArrays, Plots
 
 #=
     Represents a body/particle in an N-body gravitational problem
@@ -11,91 +8,116 @@ grav_const = 6.673e-11
     r - initial position
     v - initial velocity
 =#
-struct MassBody{mType, cType}
+struct MassBody{mType, cType <: AbstractFloat}
     m :: mType
-    r :: Vector{cType}
-    v :: Vector{cType}
-    
-    function MassBody{mType,cType}(m::mType, r::Vector{cType}, v::Vector{cType})
-        @assert length(r)==length(v) "The length of the position (r) and velocity (v) components should match"
-        new(m,r,v)
-    end
+    r :: SVector{3, cType}
+    v :: SVector{3, cType}
 end
-
-MassBody(m::mType, r :: Vector{cType}, v :: Vector{cType}) where {mType <: AbstractFloat, cType  <: AbstractFloat} = MassBody{mType, cType}(m,r,v)
 
 #=
     Contains the necessary information for solving an N-body gravitational problem
     bodies - interacting bodies/particles
-    tSpan - time, for which we want to evaluate the solution
+    tspan - time, for which we want to evaluate the solution
     G - gravitational constant
 =#
 struct NBodyGravProblem
-    bodies :: Array{MassBody, 1}
-    tSpan :: Tuple{Float64, Float64}
+    bodies :: Vector{MassBody}
     G :: Float64
+    tspan :: Tuple{Float64, Float64}
 end
 
-NBodyGravProblem(bodies, tSpan::Tuple{Float64, Float64}) = NBodyGravProblem(bodies, tSpan, grav_const)
+
+#should be optimized using the 3d Newton's law
+function gravitational_acceleration(G::Float64, rs, ms::Vector{mType}, i::Integer, n::Integer) where {mType<:AbstractFloat}
+    accel = @SVector [0.0, 0.0, 0.0];
+    ri = @SVector [rs[i, 1], rs[i, 2], rs[i, 3]]
+    for j=1:n
+        if j!=i
+            rj = @SVector [rs[j, 1], rs[j, 2], rs[j, 3]]
+            accel -= G*ms[j]*(ri-rj)/norm(ri-rj)^3
+        end
+    end
+    
+    return accel
+end
+
 
 #= 
     As a quick approach to solving an N-body problem we will just 
-    transform NBodyGravProblem to an ODEProblem
-
+    transform NBodyGravProblem to ODEProblem
     Here u will be an array consisting of a consecutive positional coordinates r 
     following by components of velocities v
 =#
-import Base.convert
-convert(::Type{ODEProblem}, x:: NBodyGravProblem) =
-begin
+function DiffEqBase.ODEProblem(x::NBodyGravProblem)
     n = length(x.bodies)
-    u0 = zeros(6*n);
+    u0 = zeros(n, 6);
     m = zeros(n)
     
     for i=1:n
-        ith = 3(i-1)+1;        
-        u0[ith:ith+2] = x.bodies[i].r;
-        u0[3n+ith:3n+ith+2] = x.bodies[i].v 
+        u0[i, 1:3] = x.bodies[i].r;
+        u0[i, 4:6] = x.bodies[i].v 
         m[i] = x.bodies[i].m
     end    
     
     function ode_system!(du, u, p, t)
-        du[1:3n] = @view u[3n+1:6n];
+        du[:, 1:3] = @view u[:, 4:6];
         for i=1:n
-            ith = 3(i-1)+1;
-            ri = @SVector [u[ith] , u[ith+1], u[ith+2]]
-            du[3n+ith:3n+ith+2] = 
-            begin
-                accel = @SVector [0.0, 0.0, 0.0]; 
-                for j=1:n
-                    if j!=i
-                        jth = 3(j-1)+1;
-                        rj = @SVector [u[jth], u[jth+1], u[jth+2]]
-                        accel -= x.G*m[j]*(ri-rj)/norm(ri-rj)^3
-                    end
-                end
-                accel
-            end
+            du[i, 4:6] .= gravitational_acceleration(x.G, u[:, 1:3], m, i, n);
         end 
     end
 
-    ODEProblem(ode_system!, u0, x.tSpan)
+    ODEProblem(ode_system!, u0, x.tspan)
 end
 
-import DiffEqBase.solve
-solve(x::NBodyGravProblem; kwargs...) = 
-begin
-    return DiffEqBase.solve(convert(ODEProblem,x); alg_hints=[:stiff], kwargs...)
+#= 
+    Since the second Newton's law is an ODE of the 2nd order,
+    we can also transform NBodyGravProblem into SecondOrderODEProblem.
+=#
+function DiffEqBase.SecondOrderODEProblem(x::NBodyGravProblem)
+    n = length(x.bodies)
+    u0 = zeros(n, 3);
+    v0 = zeros(n, 3);
+    m = zeros(n)
+    
+    for i=1:n
+        u0[i, 1:3] = x.bodies[i].r;
+        v0[i, 1:3] = x.bodies[i].v 
+        m[i] = x.bodies[i].m
+    end    
+    
+    function gravitation!(dv,v,u,p,t)
+        for i=1:n            
+            dv[i, 1:3] .= gravitational_acceleration(x.G, u[:, 1:3], m, i, n);
+        end 
+    end
+
+    SecondOrderODEProblem(gravitation!, v0, u0, x.tspan)
 end
+
+function DiffEqBase.solve(x::NBodyGravProblem, args...; transform_order=1, kwargs...)
+    if transform_order == 1
+        DiffEqBase.solve(ODEProblem(x), args...; kwargs...)
+    elseif transform_order == 2
+        DiffEqBase.solve(SecondOrderODEProblem(x), args...; kwargs...)        
+    else
+        throw(ArgumentError("unsupported transformation order of the problem (choose 1 or 2)."))
+    end
+end
+
+
 
 # Create a gif file representing moving bodies and their orbits
 function plot_xy_scattering(solution::ODESolution, path::AbstractString, duration::AbstractFloat = 3.0; plot_kwargs...)
     fps = 15
-    n = Int(length(solution[1])/6)
+    n = size(solution[1], 1)
+    
+    xlim = [minimum(solution[:,1,:]), maximum(solution[:,1,:])]
+    ylim = [minimum(solution[:,2,:]), maximum(solution[:,2,:])]
+    
     
     pl = plot()
     for i=1:n
-        plot!(pl, solution, vars = (3(i-1)+1,3(i-1)+2); linecolor = :black, label = "Orbit $i", plot_kwargs...)
+        plot!(pl, solution, vars=(i,i+n); linecolor = :black, label = "Orbit $i", xlim = 1.1*xlim, ylim = 1.1*ylim, plot_kwargs...)
     end
     
     tmax = maximum(solution.t);
@@ -103,11 +125,11 @@ function plot_xy_scattering(solution::ODESolution, path::AbstractString, duratio
     animation_data = solution(0.0:tstep:tmax)
     pos0 = animation_data[1];
     
-    scatter!([pos0[3(i-1)+1] for i=1:n]', [pos0[3(i-1)+2] for i=1:n]'; markersize = 10, label = (["$i" for i=1:n]), plot_kwargs...)
+    scatter!([pos0[i, 1] for i=1:n]', [pos0[i, 2] for i=1:n]'; markersize = 10, label = (["$i" for i=1:n]), plot_kwargs...)
     
     anim = @animate for i=1:length(animation_data)
         for j=1:n
-           pl[j+n] = animation_data[i][3(j-1)+1], animation_data[i][3(j-1)+2]
+           pl[j+n] = animation_data[i][j,1], animation_data[i][j,2]
         end
     end
     gif(anim, path, fps = fps) 
@@ -120,49 +142,31 @@ end
 function plot_xy_trailing(solution::ODESolution, path::AbstractString; ntrail::Int = 3, duration::AbstractFloat = 3.0)
     # ntrail - number of points for displaying a trailing path; the trail will correspond to the velocity of a body
     fps = 15
-    n = Int(length(solution[1])/6)
+    n = size(solution[1], 1)
     tmax = maximum(solution.t);
     tstep = tmax/(fps*duration);
     nshift = Int(floor(ntrail/2));
-    animation_data = solution(tstep : tstep : tmax-tstep)
-    xy_data = zeros(length(animation_data), 2n)
+    xy_data = solution(tstep : tstep : tmax-tstep)
     
-    for i=1:n
-        xy_data[:,i] = [d[3(i-1)+1] for d in  animation_data]
-        xy_data[:,i+n] = [d[3(i-1)+2] for d in  animation_data]
-    end
+    xlim = [minimum(xy_data[:,1,:]), maximum(xy_data[:,1,:])]
+    ylim = [minimum(xy_data[:,2,:]), maximum(xy_data[:,2,:])]
     
-    xlim = 1.1*[minimum(minimum(xy_data[:, 1:n])), maximum(maximum(xy_data[:, 1:n]))]
-    ylim = 1.1*[minimum(minimum(xy_data[:, n+1:2n])), maximum(maximum(xy_data[:, n+1:2n]))]
-    anim = @animate for i=1+nshift:length(animation_data)-nshift
-        plot(xy_data[i-nshift:i+nshift,1:n],xy_data[i-nshift:i+nshift,n+1:2n], xlim = xlim, ylim = ylim, lw=5)
+    anim = @animate for i=1+nshift:size(xy_data, 3)-nshift
+        plot(xy_data[1:n,1,i-nshift:i+nshift]',xy_data[1:n,2,i-nshift:i+nshift]', xlim = xlim, ylim = ylim, lw=5)
     end
     gif(anim, path, fps = 15)
 end
 
 # A rather dull function for automatic plotting orbits of many bodies
 function plot_xy(solution::ODESolution; kwargs...)
-    n = Int(length(solution[1])/6)
+    n = size(solution[1],1)
     
-    xlim = [Inf, -Inf]
-    ylim = [Inf, -Inf]
+    xlim = [minimum(solution[:,1,:]), maximum(solution[:,1,:])]
+    ylim = [minimum(solution[:,2,:]), maximum(solution[:,2,:])]
     
     pl = plot()
     for i=1:n
-        xindex = 3(i-1)+1;
-        yindex = 3(i-1)+2;
-        
-        plot!(pl, solution, vars = (xindex, yindex); label = "Orbit $i", kwargs...)
-        
-        xn_min = minimum(solution[xindex, :]);
-        xn_max = maximum(solution[xindex, :]);
-        yn_min = minimum(solution[yindex, :]);
-        yn_max = maximum(solution[yindex, :]);
-        
-        if xn_min < xlim[1] xlim[1] = xn_min end
-        if xn_max > xlim[2] xlim[2] = xn_max end
-        if yn_min < ylim[1] ylim[1] = yn_min end
-        if yn_max > ylim[2] ylim[2] = yn_max end
+        plot!(pl, solution, vars=(i, i+n); label = "Orbit $i", kwargs...)
     end
     plot!(pl, xlim = 1.1*xlim, ylim = 1.1*ylim)
     return pl

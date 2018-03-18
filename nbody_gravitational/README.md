@@ -12,8 +12,8 @@ using NBodyGravitational, DifferentialEquations, Plots, StaticArrays
 In order to create bodies/particles for the problem, one needs to use the MassBody structure and its constructor, which accepts mass, initial coordinates and velocity of the body.
 
 ```julia
-body1 = MassBody(2.0, [0.0, 1.0, 0.0], [ 5.775e-6, 0.0, 0.0])
-body2 = MassBody(2.0, [0.0,-1.0, 0.0], [-5.775e-6, 0.0, 0.0])
+body1 = MassBody(2.0, SVector(0.0, 1.0, 0.0), SVector( 5.775e-6, 0.0, 0.0))
+body2 = MassBody(2.0, SVector(0.0,-1.0, 0.0), SVector(-5.775e-6, 0.0, 0.0))
 ```
 
 Usually we solve an n-body problem for a certain period of time:
@@ -30,7 +30,7 @@ G = 6.673e-11
 In fact, now we have enough parameters to create an NBodyGravProblem object:
 
 ```julia
-problem = NBodyGravProblem([body1,body2], tspan, G)
+problem = NBodyGravProblem([body1,body2], G, tspan)
 ```
 
 Solution to the problem might be evaluated using the standard `solve` function:
