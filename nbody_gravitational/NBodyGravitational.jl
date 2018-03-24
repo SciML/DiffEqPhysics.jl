@@ -1,6 +1,6 @@
 module NBodyGravitational
 
-using DiffEqBase, DifferentialEquations, StaticArrays, Plots
+using DiffEqBase, OrdinaryDiffEq, StaticArrays, Plots
 
 #=
     Represents a body/particle in an N-body gravitational problem
@@ -94,11 +94,12 @@ function DiffEqBase.SecondOrderODEProblem(x::NBodyGravProblem)
     SecondOrderODEProblem(gravitation!, v0, u0, x.tspan)
 end
 
-function DiffEqBase.solve(x::NBodyGravProblem, args...; transform_order=1, kwargs...)
+import DiffEqBase: solve
+function solve(x::NBodyGravProblem, args...; transform_order=1, kwargs...)
     if transform_order == 1
-        DiffEqBase.solve(ODEProblem(x), args...; kwargs...)
+        solve(ODEProblem(x), args...; kwargs...)
     elseif transform_order == 2
-        DiffEqBase.solve(SecondOrderODEProblem(x), args...; kwargs...)        
+        solve(SecondOrderODEProblem(x), args...; kwargs...)        
     else
         throw(ArgumentError("unsupported transformation order of the problem (choose 1 or 2)."))
     end
@@ -172,6 +173,6 @@ function plot_xy(solution::ODESolution; kwargs...)
     return pl
 end
 
-export NBodyGravProblem, MassBody, plot_xy, plot_xy_trailing, plot_xy_scattering
+export NBodyGravProblem, MassBody, plot_xy, plot_xy_trailing, plot_xy_scattering, solve
 
 end

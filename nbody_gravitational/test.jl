@@ -3,7 +3,7 @@ println("====  Choreography cycle test case   ====")
 
 include("NBodyGravitational.jl")
 
-using Base.Test, NBodyGravitational, DifferentialEquations, StaticArrays
+using Base.Test, NBodyGravitational, StaticArrays, OrdinaryDiffEq 
 G = 1
 
 # Testing the well-known figure Eight
@@ -12,14 +12,14 @@ m2 = MassBody(1.0, SVector(0.995492, 0.0, 0.0), SVector(-0.347902, -0.53393, 0.0
 m3 = MassBody(1.0, SVector(0.0, 0.0, 0.0), SVector(0.695804, 1.067860, 0.0))
 tspan = (0.0, 2pi);
 problem = NBodyGravProblem([m1, m2, m3], G, tspan)
-solution_simo_3 = solve(problem);
+solution_simo_3 = solve(problem, Tsit5());
 ε = 0.1
 for i=1:3, j=1:3
     @test solution_simo_3[1][i,j] ≈ solution_simo_3[end][i,j] atol=ε
 end
 
 #the same NBodyGravProblem converted into SecondOrderODEProblem
-solution_simo_3_2nd = solve(problem, transform_order=2);
+solution_simo_3_2nd = solve(problem, Tsit5(), transform_order=2);
 ε = 0.1
 for i=1:3, j=1:3
     @test solution_simo_3_2nd[1][9+3(i-1)+j] ≈ solution_simo_3_2nd[end][9+3(i-1)+j] atol=ε
@@ -33,7 +33,7 @@ m4 = MassBody(1.0, SVector(-1.268608, 0.267651, 0.0), SVector(-1.271564, 0.16864
 m5 = MassBody(1.0, SVector(0.439775, 0.169717, 0.0), SVector(-1.822785, 0.128248, 0.0))
 tspan = (0.0, 2pi);
 problem = NBodyGravProblem([m1, m2, m3, m4, m5], G, tspan)
-solution_simo_5 = solve(problem, abstol=1e-10, reltol=1e-10);
+solution_simo_5 = solve(problem, Tsit5(), abstol=1e-10, reltol=1e-10);
 
 ε = 0.01
 for i=1:5, j=1:3
