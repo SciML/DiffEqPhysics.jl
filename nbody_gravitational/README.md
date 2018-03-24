@@ -5,7 +5,7 @@ This is a 5-body chain choreography, evidently reflecting the shape of the bodie
 
 ## Usings
 ```julia
-using NBodyGravitational, DifferentialEquations, Plots, StaticArrays
+using NBodyGravitational, GravitationalAnimation, DifferentialEquations, StaticArrays, OrdinaryDiffEq
 ```
 ## Defining bodies
 
@@ -35,7 +35,7 @@ problem = NBodyGravProblem([body1,body2], G, tspan)
 
 Solution to the problem might be evaluated using the standard `solve` function:
 ```julia
-solution = solve(problem);
+solution = solve(problem, Tsit5());
 ```
 
 And, finally, we plot our solution showing two equal bodies rotating on the same orbit:
