@@ -10,12 +10,10 @@ include("nbody.jl")
 include("hamiltonian.jl")
 include("plot.jl")
 include("nbody_gravitational.jl")
-include("animation_gravitational.jl")
 
 export HamiltonianProblem, LagrangianProblem, NBodyProblem, plot_orbits
 
-export NBodyGravProblem, MassBody, GravImagingData, solve, 
-	   plot_xy_trailing, plot_xy_scattering, plot_xy
+export NBodyGravProblem, MassBody, GravImagingData, solve
 
 
 end # module
