@@ -99,7 +99,7 @@ function PotentialNBodySystem(
     PotentialNBodySystem(bodies, potentials, lj_parameters)
 end
 
-function gther_bodies_initial_coordinates(system :: NBodySystem)
+function gather_bodies_initial_coordinates(system :: NBodySystem)
     bodies = simulation.system.bodies;
     n = length(bodies)
     u0 = zeros(3, 2*n)
@@ -111,7 +111,7 @@ function gther_bodies_initial_coordinates(system :: NBodySystem)
         m[i] = bodies[i].m
     end 
 
-    (u0, m, n)
+    (u0, n)
 end
 
 #= 
@@ -119,7 +119,7 @@ end
     following by components of velocities v
 =#
 function DiffEqBase.ODEProblem(simulation :: NBodySimulation{<:ChargedParticles, <:AbstractFloat})
-    (u0, n) = gther_bodies_initial_coordinates(simulation.system)   
+    (u0, n) = gather_bodies_initial_coordinates(simulation.system)   
     
     function ode_system!(du, u, p, t)
         du[:, 1:n] = @view u[:, n+1:2n];
@@ -151,7 +151,7 @@ function pairwise_electrostatic_acceleration(
 end
 
 function DiffEqBase.ODEProblem(simulation :: NBodySimulation{PotentialNBodySystem, <:AbstractFloat})
-    (u0, m, n) = gther_bodies_initial_coordinates(simulation.system)
+    (u0, n) = gather_bodies_initial_coordinates(simulation.system)
     L = simulation.limiting_boundary[2]
 
     acceleration_functions = []
