@@ -1,9 +1,6 @@
-using StaticArrays, DiffEqBase, OrdinaryDiffEq
-#Structures for bodies and systems under symulations
+using StaticArrays, DiffEqBase, OrdinaryDiffEq, RecipesBase
 
-# Fields for position, velocity and mass of a particle should be required for every descendant
-abstract type Body
-end
+include("../src/nbody_bodies.jl")
 
 abstract type NBodySystem
 end
@@ -26,29 +23,10 @@ NBodySimulation(system::NBodySystem, limiting_boundary :: SVector{6, Float64}, t
 # and with physical properties of the whole system.
 struct SimulationResult
     solution :: AbstractTimeseriesSolution
+    simulation :: NBodySimulation
 end
 
-struct SphericalBody{mType, qType, cType <: AbstractFloat} <: Body
-    r :: SVector{3, cType}  #required 
-    v :: SVector{3, cType}  #required
-    m :: mType              #required
-    R :: cType
-    q :: qType 
-    mm :: SVector{3, qType}
-end
-
-struct MassBody{mType <: AbstractFloat, cType <: AbstractFloat} <:Body
-    r :: SVector{3, cType}
-    v :: SVector{3, cType}
-    m :: mType     
-end
-
-struct ChargedParticle{fType <: AbstractFloat} <:Body
-    r :: SVector{3, fType}
-    v :: SVector{3, fType}
-    m :: fType 
-    q :: fType     
-end
+(s :: SimulationResult)(t) = return s.solution(t)
 
 #=
 function SimulationResult(solution :: AbstractTimeseriesSolution)
@@ -60,7 +38,7 @@ end
 # it is better to use a specific function for n-body simulations.
 function run_simulation(s::NBodySimulation, args...; kwargs...)
     solution = solve(ODEProblem(s), args...; kwargs...)
-    return SimulationResult(solution)
+    return SimulationResult(solution, s)
 end
 
 struct ChargedParticles{bType<:ChargedParticle} <: NBodySystem
@@ -207,7 +185,41 @@ function pairwise_lennard_jones_acceleration(rs,
     return -24*system.lj_parameters.ϵ/system.lj_parameters.σ*accel
 end
 
-function temperature(result :: SimulationResult, time :: Float64)
+function get_velocity(result :: SimulationResult, time, i = 0)
+    positions = result(time)
+    n = div(size(positions,2),2)
+    if i <= 0
+        return positions[:, n+1:end]
+    else
+        return positions[:, n+i]
+    end
+end
+
+function get_position(result :: SimulationResult, time, i = 0)
+    positions = result(time)
+    n = div(size(positions,2),2)
+    if i <= 0
+        return positions[:, 1:n]
+    else
+        return positions[:, i]
+    end
+end
+
+function get_masses(system ::NBodySystem)
+    n = length(system.bodies)
+    masses = zeros(n)
+    for i = 1:n
+        masses[i] = system.bodies[i].m
+    end
+    return masses
+end
+
+function temperature(result :: SimulationResult, time :: Real)
+    kb= 1.38e-23
+    velocities = get_velocity(result, time)
+    masses = get_masses(simulation.system)
+    temperature = mean(sum(velocities.^2,1).*masses)/(3kb)
+    return temperature
 end
 
 function pressure(result :: SimulationResult, time :: Float64)
@@ -229,4 +241,20 @@ function load_system_from_file(path::AbstractString)
     end
     
     return NBodySystem(bodies)
+end
+
+@recipe function g(data::SimulationResult)
+    solution = data.solution
+    positions = get_position(data,0)
+    
+    n = div(size(solution[1],2),2)
+    
+    xlim --> 1.1*[data.simulation.limiting_boundary[1], data.simulation.limiting_boundary[2]]
+    ylim --> 1.1*[data.simulation.limiting_boundary[3], data.simulation.limiting_boundary[4]]
+    zlim --> 1.1*[data.simulation.limiting_boundary[5], data.simulation.limiting_boundary[6]]
+    
+    seriestype --> :scatter
+    markersize --> 5
+
+    (positions[1,:], positions[2,:], positions[3,:])
 end

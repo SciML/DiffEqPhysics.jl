@@ -1,7 +1,9 @@
+
 include("./../src/nbody_base.jl")
 
 println("====     Electrostatics Test     ====")
 
+# small mass with negative charge rotating around more massive object with positive charge
 r = 100.0
 q1 = 1e-3
 q2 = -1e-3

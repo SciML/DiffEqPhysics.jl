@@ -1,6 +1,7 @@
 using DiffEqPhysics, Base.Test, StaticArrays, OrdinaryDiffEq 
 
 include("./../src/nbody_gravitational.jl")
+include("./../src/nbody_bodies.jl")
 
 println("====     NBodyGravProblem Test     ====")
 println("====  Choreography cycle test case   ====")
@@ -8,9 +9,9 @@ println("====  Choreography cycle test case   ====")
 G = 1
 
 # Testing the well-known figure Eight
-m1 = MassBody(1.0, SVector(-0.995492, 0.0, 0.0), SVector(-0.347902, -0.53393, 0.0))
-m2 = MassBody(1.0, SVector(0.995492, 0.0, 0.0), SVector(-0.347902, -0.53393, 0.0))
-m3 = MassBody(1.0, SVector(0.0, 0.0, 0.0), SVector(0.695804, 1.067860, 0.0))
+m1 = MassBody(SVector(-0.995492, 0.0, 0.0), SVector(-0.347902, -0.53393, 0.0), 1.0)
+m2 = MassBody(SVector(0.995492, 0.0, 0.0), SVector(-0.347902, -0.53393, 0.0), 1.0)
+m3 = MassBody(SVector(0.0, 0.0, 0.0), SVector(0.695804, 1.067860, 0.0), 1.0)
 tspan = (0.0, 2pi);
 problem = NBodyGravProblem([m1, m2, m3], G, tspan)
 solution_simo_3 = solve(problem, Tsit5());
@@ -43,11 +44,11 @@ end
 
 
 # We need greater precision for a bigger choreography
-m1 = MassBody(1.0, SVector(1.657666, 0.0, 0.0), SVector(0.0, -0.593786, 0.0))
-m2 = MassBody(1.0, SVector(0.439775, -0.169717, 0.0), SVector(1.822785, 0.128248, 0.0))
-m3 = MassBody(1.0, SVector(-1.268608, -0.267651, 0.0), SVector(1.271564, 0.168645, 0.0))
-m4 = MassBody(1.0, SVector(-1.268608, 0.267651, 0.0), SVector(-1.271564, 0.168645, 0.0))
-m5 = MassBody(1.0, SVector(0.439775, 0.169717, 0.0), SVector(-1.822785, 0.128248, 0.0))
+m1 = MassBody(SVector(1.657666, 0.0, 0.0), SVector(0.0, -0.593786, 0.0), 1.0)
+m2 = MassBody(SVector(0.439775, -0.169717, 0.0), SVector(1.822785, 0.128248, 0.0), 1.0)
+m3 = MassBody(SVector(-1.268608, -0.267651, 0.0), SVector(1.271564, 0.168645, 0.0), 1.0)
+m4 = MassBody(SVector(-1.268608, 0.267651, 0.0), SVector(-1.271564, 0.168645, 0.0), 1.0)
+m5 = MassBody(SVector(0.439775, 0.169717, 0.0), SVector(-1.822785, 0.128248, 0.0), 1.0)
 tspan = (0.0, 2pi);
 problem = NBodyGravProblem([m1, m2, m3, m4, m5], G, tspan)
 solution_simo_5 = solve(problem, Tsit5(), abstol=1e-10, reltol=1e-10);

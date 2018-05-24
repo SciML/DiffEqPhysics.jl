@@ -1,17 +1,5 @@
 using DiffEqBase, OrdinaryDiffEq, StaticArrays, RecipesBase
-
-#=
-    Represents a body/particle in an N-body gravitational problem
-    m - mass
-    r - initial position
-    v - initial velocity
-=#
-struct MassBody{mType, cType <: AbstractFloat}
-    m :: mType
-    r :: SVector{3, cType}
-    v :: SVector{3, cType}
-end
-
+include("nbody_bodies.jl")
 #=
     Contains the necessary information for solving an N-body gravitational problem
     bodies - interacting bodies/particles
