@@ -16,10 +16,10 @@ p1 = ChargedParticle(SVector(0.0, 0.0, 0.0), SVector(0.0, 0, 0.0), m1, q1)
 p2 = ChargedParticle(SVector(r, 0.0, 0.0), SVector(0.0, v2, 0.0), m2, q2)
 system = ChargedParticles([p1, p2], k)
 simulation = NBodySimulation(system, (0.0, t))
-simResult = run_simulation(simulation)
+sim_result = run_simulation(simulation)
 
 
-solution = simResult.solution;
+solution = sim_result.solution;
 ε = 0.1 * r
 for j = 1:2, i = 1:3
     @test solution[1][i,j] ≈ solution[end][i,j] atol = ε
@@ -42,11 +42,11 @@ p1 = ChargedParticle(SVector(-r1 / 2, 0.0, 0.0), SVector(0.0, 0.0, 0.0), m1, q1)
 p2 = ChargedParticle(SVector(r1 / 2, 0.0, 0.0), SVector(0.0, 0.0, 0.0), m2, q2)
 system = ChargedParticles([p1, p2], k)
 simulation = NBodySimulation(system, (t1, t2))
-simResult = run_simulation(simulation, VelocityVerlet(), dt=τ)
+sim_result = run_simulation(simulation, VelocityVerlet(), dt=τ)
 
-r2 = get_position(simResult, t2, 2) - get_position(simResult, t2, 1)
-vExpected = sqrt(k * q1 * q2 / m1 * (1 / norm(r1) - 1 / norm(r2)))
-vActual = norm(get_velocity(simResult, t2, 2))
+r2 = get_position(sim_result, t2, 2) - get_position(sim_result, t2, 1)
+v_expected = sqrt(k * q1 * q2 / m1 * (1 / norm(r1) - 1 / norm(r2)))
+v_actual = norm(get_velocity(sim_result, t2, 2))
 
-ε = 0.001 * vExpected
-@test vExpected ≈ vActual atol = ε
+ε = 0.001 * v_expected
+@test v_expected ≈ v_actual atol = ε

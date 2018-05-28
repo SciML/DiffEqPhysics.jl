@@ -17,12 +17,12 @@ p2 = MassBody(SVector(r1 / 2, 0.0, 0.0), SVector(0.0, 0.0, 0.0), m2)
 parameters = LennardJonesParameters(ϵ, σ, Inf)
 system = PotentialNBodySystem([p1, p2], Dict(:lennard_jones => parameters))
 simulation = NBodySimulation(system, (t1, t2))
-simResult = run_simulation(simulation, VelocityVerlet(), dt=τ)
+sim_result = run_simulation(simulation, VelocityVerlet(), dt=τ)
 
 
-r2 = get_position(simResult, t2, 2) - get_position(simResult, t2, 1)
-vExpected = sqrt(4ϵ / m1 * ( ((σ / norm(r1))^12 - (σ / norm(r2))^12) - ((σ / norm(r1))^6 - (σ / norm(r2))^6 ) ))
-vActual = norm(get_velocity(simResult, t2, 2))
+r2 = get_position(sim_result, t2, 2) - get_position(sim_result, t2, 1)
+v_expected = sqrt(4ϵ / m1 * ( ((σ / norm(r1))^12 - (σ / norm(r2))^12) - ((σ / norm(r1))^6 - (σ / norm(r2))^6 ) ))
+v_actual = norm(get_velocity(sim_result, t2, 2))
 
-ε = 0.001 * vExpected
-@test vExpected ≈ vActual atol = ε
+ε = 0.001 * v_expected
+@test v_expected ≈ v_actual atol = ε

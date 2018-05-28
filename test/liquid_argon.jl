@@ -24,14 +24,26 @@ kb = 1.38e-23 # J/K
 σ = 3.4e-10 # m
 ρ = 1374 # kg/m^3
 m = 39.95 * 1.6747 * 1e-27 # kg
-L = 2.229σ 
+L = 10.229σ 
 N = floor(Int, ρ * L^3 / m)
 R = 2.25σ   
-v = sqrt(3  kb * T / m)
+v = sqrt(3 * kb * T / m)
 τ = 1e-14 # σ/v
+t1 = 0.0
+t2 = 800τ
 bodies = generate_bodies(N, m, v, L)
 parameters = LennardJonesParameters(ϵ, σ, R)
-ljSystem = PotentialNBodySystem(bodies, Dict(:lennard_jones => parameters));
-simulation = NBodySimulation(ljSystem, (0.0, 800τ), PeriodicBoundaryConditions(L));
+lj_system = PotentialNBodySystem(bodies, Dict(:lennard_jones => parameters));
+simulation = NBodySimulation(lj_system, (t1, t2), PeriodicBoundaryConditions(L));
 #result = run_simulation(simulation, Tsit5())
 result = run_simulation(simulation, VelocityVerlet(), dt=τ)
+
+
+using Plots
+
+vs = Float64[]
+for i = 1:N
+    v = get_velocity(result, t2,i)
+    push!(vs,norm(v))
+end
+histogram(vs, bins=0:11, xlim=[0, maximum(vs)], ylim=[0,1])
