@@ -9,8 +9,7 @@ using ForwardDiff, StaticArrays, RecipesBase
 include("nbody_problem.jl")
 include("hamiltonian.jl")
 include("plot.jl")
-include("nbody_bodies.jl")
-include("nbody_gravitational.jl")
+include("nbody_simulation.jl")
 
 export HamiltonianProblem, LagrangianProblem, NBodyProblem, plot_orbits
 
