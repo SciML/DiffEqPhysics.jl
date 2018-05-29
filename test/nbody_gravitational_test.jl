@@ -1,7 +1,5 @@
 using DiffEqPhysics, Base.Test, StaticArrays, OrdinaryDiffEq 
 
-include("./../src/nbody_simulation.jl")
-
 println("====  Gravitational Functional Test  ====")
 println("====  Choreography cycle test case   ====")
 

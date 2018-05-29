@@ -1,4 +1,3 @@
-include("./../src/nbody_simulation.jl")
 println("====     Two particles interacting via the Lennard-Jones potential    ====")
 
 m1 = 1.0

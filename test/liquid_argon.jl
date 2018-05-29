@@ -1,13 +1,35 @@
-include("../src/nbody_simulation.jl")
+#include("../src/nbody_simulation.jl")
 
-function generate_bodies(n::Int, m::AbstractFloat, mean_velocity::AbstractFloat, L::AbstractFloat)
+function generate_bodies_randomly(n::Int, m::AbstractFloat, mean_velocity::AbstractFloat, L::AbstractFloat)
     velocity_directions = generate_random_directions(n)
+    velocities =  sqrt(mean_velocity) * velocity_directions
     bodies = MassBody[]
     for i = 1:n
         r = @SVector rand(3);
-        v = mean_velocity * velocity_directions[i]
+        v = velocities[i]
         body = MassBody(L * r, v, m)
         push!(bodies, body)
+    end
+    return bodies
+end
+
+function generate_bodies_in_cell_nodes(n::Int, m::AbstractFloat, v_dev::AbstractFloat, L::AbstractFloat)
+
+    dL = L / n^(1 / 3)
+    rng = MersenneTwister(n);
+    velocities = v_dev * randn(rng, Float64, (3, n))
+    bodies = MassBody[]
+
+    count = 1
+    for x = 0:dL:L, y = 0:dL:L, z = 0:dL:L        
+        if count > n
+            break
+        end
+        r = SVector(x, y, z)
+        v = SVector{3}(velocities[:,count])
+        body = MassBody(r, v, m)
+        push!(bodies, body)
+        count += 1           
     end
     return bodies
 end
@@ -27,23 +49,14 @@ m = 39.95 * 1.6747 * 1e-27 # kg
 L = 10.229σ 
 N = floor(Int, ρ * L^3 / m)
 R = 2.25σ   
-v = sqrt(3 * kb * T / m)
+v_dev = sqrt(kb * T / m)
 τ = 1e-14 # σ/v
 t1 = 0.0
-t2 = 800τ
-bodies = generate_bodies(N, m, v, L)
+t2 = 300τ
+#bodies = generate_bodies_randomly(N, m, v_dev, L)
+bodies = generate_bodies_in_cell_nodes(N, m, v_dev, L)
 parameters = LennardJonesParameters(ϵ, σ, R)
 lj_system = PotentialNBodySystem(bodies, Dict(:lennard_jones => parameters));
 simulation = NBodySimulation(lj_system, (t1, t2), PeriodicBoundaryConditions(L));
 #result = run_simulation(simulation, Tsit5())
 result = run_simulation(simulation, VelocityVerlet(), dt=τ)
-
-
-using Plots
-
-vs = Float64[]
-for i = 1:N
-    v = get_velocity(result, t2,i)
-    push!(vs,norm(v))
-end
-histogram(vs, bins=0:11, xlim=[0, maximum(vs)], ylim=[0,1])

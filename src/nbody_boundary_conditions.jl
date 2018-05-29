@@ -1,8 +1,8 @@
 abstract type BoundaryConditions
 end
 
-struct PeriodicBoundaryConditions <: BoundaryConditions
-    boundary::SVector{6,<:Real}
+struct PeriodicBoundaryConditions{cType <: AbstractFloat} <: BoundaryConditions
+    boundary::SVector{6,cType}
 end
 
 PeriodicBoundaryConditions(L::Real) = PeriodicBoundaryConditions(SVector(0, L, 0, L, 0, L))
@@ -21,8 +21,8 @@ function Base.getindex(pbc::PeriodicBoundaryConditions, i::Int)
 end
 
 
-struct InfiniteBox <: BoundaryConditions
-    boundary::SVector{6,<:AbstractFloat}
+struct InfiniteBox{cType <: AbstractFloat} <: BoundaryConditions
+    boundary::SVector{6,<:cType}
 end
 
 InfiniteBox() = InfiniteBox(SVector(-Inf, Inf, -Inf, Inf, -Inf, Inf))

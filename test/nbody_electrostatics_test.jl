@@ -1,5 +1,3 @@
-include("./../src/nbody_simulation.jl")
-
 println("====  Electrostatics Functional Tests  ====")
 println("====  One particle rotates around another  ====")
 

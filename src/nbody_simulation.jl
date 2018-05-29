@@ -9,10 +9,10 @@ include("./nbody_boundary_conditions.jl")
 # This structure defines conditions under wich we test our system of n-bodies
 # With this wrapping we can make such fields as `boundary_conditions` necessary for every simulation
 # while allowing one to describe a particular systme of N interacting particles
-struct NBodySimulation{sType <: NBodySystem}
+struct NBodySimulation{sType <: NBodySystem,bcType <: BoundaryConditions}
     system::sType
     tspan::Tuple{Float64,Float64}
-    boundary_conditions::BoundaryConditions
+    boundary_conditions::bcType
     external_electric_field
     external_magnetic_field
     external_gravitational_field
@@ -38,10 +38,10 @@ NBodySimulation(system::NBodySystem, tspan::Tuple{Float64,Float64}) =
 function Base.show(stream::IO, s::NBodySimulation)
     print(stream, "Timespan: ")
     show(stream, s.tspan)
-    print(stream, "\n")
+    println(stream)
     print(stream, "Boundary conditions: ")
     show(stream, s.boundary_conditions)
-    print(stream, "\n")
+    println(stream)
     show(stream, s.system)
 end
 

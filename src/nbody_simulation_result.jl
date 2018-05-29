@@ -8,11 +8,11 @@ end
 function Base.show(stream::IO, sr::SimulationResult)
     print(stream, "N: ") 
     show(stream, length(sr.simulation.system.bodies))
-    print("\n")
+    println(stream)
     show(stream, sr.simulation.system)
     print(stream, "Time steps: ") 
     show(stream, length(sr.solution.t))
-    print("\n")
+    println(stream)
     print(stream, "t: ") 
     show(stream, sr.solution.t)
 end
@@ -90,10 +90,21 @@ function temperature(result::SimulationResult, time::Real)
     return temperature
 end
 
-function pressure(result::SimulationResult, time::Float64)
+function pressure(sr::SimulationResult, time::Float64)
 end
 
-function total_energy(result::SimulationResult, time::Float64)
+function total_energy(sr::SimulationResult, time::Float64)
+end
+
+function potential_energy()
+
+end
+
+function kinetic_energy(sr::SimulationResult, time::Float64)
+    vs = get_velocity(sr, time)
+    masses = get_masses(sr.simulation.system)
+    ke = sum(norm.(sum(vs.^2, 1)) .* masses/2)
+    return ke
 end
 
 # In future it seems to be convenient to load data for particles from a file

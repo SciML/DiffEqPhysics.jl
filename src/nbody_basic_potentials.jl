@@ -1,15 +1,15 @@
 abstract type PotentialParameters
 end
 
-struct LennardJonesParameters <: PotentialParameters
-    ϵ::AbstractFloat
-    σ::AbstractFloat
-    R::AbstractFloat
-    σ2::AbstractFloat
-    R2::AbstractFloat
+struct LennardJonesParameters{pType <: Real} <: PotentialParameters
+    ϵ::pType
+    σ::pType
+    R::pType
+    σ2::pType
+    R2::pType
 end
 
-function LennardJonesParameters(ϵ::AbstractFloat, σ::AbstractFloat, R::AbstractFloat)
+function LennardJonesParameters(ϵ::Real, σ::Real, R::Real)
     LennardJonesParameters(ϵ, σ, R, σ^2, R^2)
 end
 
@@ -18,14 +18,14 @@ function LennardJonesParameters()
 end
 
 function Base.show(stream::IO, pp::LennardJonesParameters)
-    print(stream, "Lennard-Jones:\n")
-    print(stream, "\tϵ:"); show(stream, pp.ϵ); print(stream, "\n")
-    print(stream, "\tσ:"); show(stream, pp.σ); print(stream, "\n")
-    print(stream, "\tR:"); show(stream, pp.R); print(stream, "\n")
+    println(stream, "Lennard-Jones:")
+    print(stream, "\tϵ:"); show(stream, pp.ϵ); println(stream)
+    print(stream, "\tσ:"); show(stream, pp.σ); println(stream)
+    print(stream, "\tR:"); show(stream, pp.R); println(stream)
 end
 
-struct GravitationalParameters <: PotentialParameters
-    G::AbstractFloat
+struct GravitationalParameters{gType <: Real} <: PotentialParameters
+    G::gType
 end
 
 function GravitationalParameters()
@@ -33,12 +33,13 @@ function GravitationalParameters()
 end
 
 function Base.show(stream::IO, pp::GravitationalParameters)
-    print(stream, "Gravitational:\n")
-    print(stream, "\tG:"); show(stream, pp.G); print(stream, "\n")
+    println(stream, "Gravitational:")
+    print(stream, "\tG:"); show(stream, pp.G); 
+    println(stream)
 end
 
-struct ElectrostaticParameters <: PotentialParameters
-    k::AbstractFloat
+struct ElectrostaticParameters{kType <: Real} <: PotentialParameters
+    k::kType
 end
 
 function ElectrostaticParameters()
@@ -46,6 +47,7 @@ function ElectrostaticParameters()
 end
 
 function Base.show(stream::IO, pp::ElectrostaticParameters)
-    print(stream, "Electrostatic:\n")
-    print(stream, "\tk:"); show(stream, pp.k); print(stream, "\n")
+    println(stream, "Electrostatic:")
+    print(stream, "\tk:"); show(stream, pp.k); 
+    println(stream)
 end

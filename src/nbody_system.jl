@@ -4,14 +4,14 @@ end
 abstract type BasicPotentialSystem <: NBodySystem
 end
 
-struct ChargedParticles{bType <: ChargedParticle} <: BasicPotentialSystem
+struct ChargedParticles{bType <: ChargedParticle,kType <: Real} <: BasicPotentialSystem
     bodies::Vector{bType}
-    k::AbstractFloat
+    k::kType
 end
 
-struct GravitationalSystem{bType <: MassBody} <: BasicPotentialSystem
+struct GravitationalSystem{bType <: MassBody,gType <: Real} <: BasicPotentialSystem
     bodies::Vector{bType}
-    G::Real
+    G::gType
 end
 
 struct CustomAccelerationSystem{bType <: Body} <: NBodySystem
@@ -45,8 +45,7 @@ function PotentialNBodySystem(bodies::Vector{<:Body}; potentials::Vector{Symbol}
 end
 
 function Base.show(stream::IO, s::PotentialNBodySystem)
-    print(stream, "Potentials: ")
-    print(stream, "\n")
+    println(stream, "Potentials: ")
     for (key, potential) in s.potentials
         show(stream, potential)
     end

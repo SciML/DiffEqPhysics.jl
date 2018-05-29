@@ -1,5 +1,3 @@
-include("./../src/nbody_simulation.jl")
-
 m1 = 1.0
 m2 = 1.0
 
