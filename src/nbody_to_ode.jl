@@ -20,7 +20,7 @@ function pairwise_lennard_jones_acceleration!(dv,
     p::LennardJonesParameters,
     pbc::BoundaryConditions)
 
-    accel = @SVector [0.0, 0.0, 0.0];
+    force = @SVector [0.0, 0.0, 0.0];
     ri = @SVector [rs[1, i], rs[2, i], rs[3, i]]
     
     for j = 1:n
@@ -32,14 +32,12 @@ function pairwise_lennard_jones_acceleration!(dv,
             rij_2 = dot(rij, rij)
             σ_rij_6 = (p.σ2 / rij_2)^3
             σ_rij_12 = σ_rij_6^2
-
             if rij_2 < p.R2
-                accel += (2 * σ_rij_12 - σ_rij_6 ) * rij / rij_2
+                force += (2 * σ_rij_12 - σ_rij_6 ) * rij / rij_2
             end            
         end
     end   
-
-    dv .=  24 * p.ϵ * accel
+    dv .=  24 * p.ϵ * force / bodies[i].m
 end
 
 function apply_boundary_conditions!(rij, pbc::PeriodicBoundaryConditions)
@@ -59,16 +57,16 @@ function pairwise_electrostatic_acceleration!(dv,
     bodies::Vector{<:ChargedParticle},
     p::ElectrostaticParameters)
 
-    accel = @SVector [0.0, 0.0, 0.0];
+    force = @SVector [0.0, 0.0, 0.0];
     ri = @SVector [rs[1, i], rs[2, i], rs[3, i]]
     for j = 1:n
         if j != i
             rj = @SVector [rs[1, j], rs[2, j], rs[3, j]]
-            accel += p.k * bodies[i].q * bodies[j].q / bodies[i].m * (ri - rj) / norm(ri - rj)^3
+            force += p.k * bodies[i].q * bodies[j].q * (ri - rj) / norm(ri - rj)^3
         end
     end    
 
-    dv .= accel
+    dv .= force / bodies[i].m
 end
 
 
@@ -149,7 +147,7 @@ function DiffEqBase.SecondOrderODEProblem(simulation::NBodySimulation{<:Potentia
         @inbounds for i = 1:n
             for acceleration! in acceleration_functions
                 a = @view dv[:, i] 
-                acceleration!(a, u, v, t, i);       
+                acceleration!(a, u, v, t, i);    
             end
         end 
     end
