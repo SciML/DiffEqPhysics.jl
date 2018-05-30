@@ -51,3 +51,17 @@ function Base.show(stream::IO, pp::ElectrostaticParameters)
     print(stream, "\tk:"); show(stream, pp.k); 
     println(stream)
 end
+
+struct MagnetostaticParameters{mType <: Real} <: PotentialParameters
+    μ_4π::mType
+end
+
+function MagnetostaticParameters()
+    MagnetostaticParameters(1e-7)
+end
+
+function Base.show(stream::IO, pp::MagnetostaticParameters)
+    println(stream, "Magnetostatic:")
+    print(stream, "\tμ/4π:"); show(stream, pp.μ_4π); 
+    println(stream)
+end

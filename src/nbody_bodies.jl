@@ -1,25 +1,24 @@
-# Fields for position, velocity and mass of a particle should be required for every descendant
+# This is an attempt to include the required for n-body simulations fields into structures
+# Indeed, tools of ConcreteAbstractions.jl seem to be more suitable for the fields inhereting 
+@def position_velocity_mass begin
+    r::SVector{3,cType} 
+    v::SVector{3,cType}
+    m::mType           
+end
+
 abstract type Body
 end
 
-struct MassBody{mType <: AbstractFloat,cType <: AbstractFloat} <: Body
-    r::SVector{3,cType} #required 
-    v::SVector{3,cType} #required
-    m::mType             #required
+struct MassBody{cType <: Real,mType <: Real} <: Body
+    @position_velocity_mass
 end
 
-struct ChargedParticle{fType <: AbstractFloat} <: Body
-    r::SVector{3,fType}
-    v::SVector{3,fType}
-    m::fType 
-    q::fType     
+struct ChargedParticle{cType <: Real,mType <: Real,qType <: Real} <: Body
+    @position_velocity_mass
+    q::qType     
 end
 
-struct SphericalBody{mType,qType,cType <: AbstractFloat} <: Body
-    r::SVector{3,cType}  
-    v::SVector{3,cType}  
-    m::mType              
-    R::cType
-    q::qType 
-    mm::SVector{3,qType}
+struct MagneticParticle{cType <: Real,mType <: Real,mmType <: Real} <: Body
+    @position_velocity_mass
+    mm::SVector{3,mmType}   
 end

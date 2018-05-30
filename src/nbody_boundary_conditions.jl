@@ -1,7 +1,7 @@
 abstract type BoundaryConditions
 end
 
-struct PeriodicBoundaryConditions{cType <: AbstractFloat} <: BoundaryConditions
+struct PeriodicBoundaryConditions{cType <: Real} <: BoundaryConditions
     boundary::SVector{6,cType}
 end
 
@@ -15,13 +15,13 @@ function Base.next(pbc::PeriodicBoundaryConditions, state)
     pbc.boundary[state], state + 1
 end
 
-function Base.getindex(pbc::PeriodicBoundaryConditions, i::Int)
+function Base.getindex(pbc::PeriodicBoundaryConditions, i::Integer)
     1 <= i <= length(pbc.boundary) || throw(BoundsError(pbc, i))
     pbc.boundary[i]
 end
 
 
-struct InfiniteBox{cType <: AbstractFloat} <: BoundaryConditions
+struct InfiniteBox{cType <: Real} <: BoundaryConditions
     boundary::SVector{6,<:cType}
 end
 

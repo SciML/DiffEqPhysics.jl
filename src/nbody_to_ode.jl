@@ -14,8 +14,8 @@ end
 
 function pairwise_lennard_jones_acceleration!(dv,
     rs,
-    i::Int,
-    n::Int,
+    i::Integer,
+    n::Integer,
     bodies::Vector{<:MassBody},
     p::LennardJonesParameters,
     pbc::BoundaryConditions)
@@ -52,8 +52,8 @@ end
 
 function pairwise_electrostatic_acceleration!(dv,
     rs,
-    i::Int,
-    n::Int,
+    i::Integer,
+    n::Integer,
     bodies::Vector{<:ChargedParticle},
     p::ElectrostaticParameters)
 
@@ -72,8 +72,8 @@ end
 
 function gravitational_acceleration!(dv, 
     rs,
-    i::Int,
-    n::Int,
+    i::Integer,
+    n::Integer,
     bodies::Vector{<:MassBody},
     p::GravitationalParameters)
     
@@ -88,6 +88,32 @@ function gravitational_acceleration!(dv,
     end
     
     dv .= accel
+end
+
+function magnetostatic_dipdip_acceleration!(dv, 
+    rs,
+    i::Integer,
+    n::Integer,
+    bodies::Vector{<:MagneticParticle},
+    p::MagnetostaticParameters)
+
+    force = @SVector [0.0, 0.0, 0.0];
+    mi = bodies[i].mm
+    ri = @SVector [rs[1, i], rs[2, i], rs[3, i]]
+    for j = 1:n
+        if j != i
+            mj = bodies[j].mm
+            rj = @SVector [rs[1, j], rs[2, j], rs[3, j]]
+            rij = ri - rj
+            rij4 = dot(rij,rij)^2
+            r =  rij/norm(rij)
+            mir = dot(mi, r)
+            mij = dot(mj, r)
+            force += (mi*mij + mj*mir + r*dot(mi,mj) - 5*r*mir*mij)/rij4
+        end
+    end
+    
+    dv .= 3*p.μ_4π*force / bodies[i].m
 end
 
 function gather_accelerations_for_potentials(simulation::NBodySimulation{<:PotentialNBodySystem})
@@ -110,6 +136,10 @@ end
 
 function get_accelerating_function(parameters::GravitationalParameters, simulation::NBodySimulation)
     (dv, u, v, t, i) -> gravitational_acceleration!(dv, u, i, length(simulation.system.bodies), simulation.system.bodies, parameters)
+end
+
+function get_accelerating_function(parameters::MagnetostaticParameters, simulation::NBodySimulation)
+    (dv, u, v, t, i) -> magnetostatic_dipdip_acceleration!(dv, u, i, length(simulation.system.bodies), simulation.system.bodies, parameters)
 end
 
 function gather_accelerations_for_potentials(simulation::NBodySimulation{CustomAccelerationSystem})

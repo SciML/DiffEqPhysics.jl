@@ -17,7 +17,7 @@ function Base.show(stream::IO, sr::SimulationResult)
     show(stream, sr.solution.t)
 end
 
-(sr::SimulationResult)(t) = return sr.solution(t)
+(sr::SimulationResult)(args...; kwargs...) = return sr.solution(args...; kwargs...)
 
 # Instead of treating NBodySimulation as a DiffEq problem and passing it into a solve method
 # it is better to use a specific function for n-body simulations.
@@ -33,7 +33,7 @@ function run_simulation(s::NBodySimulation, alg_type::Union{VelocityVerlet,DPRKN
 end
 
 
-function get_velocity(sr::SimulationResult, time, i=0)
+function get_velocity(sr::SimulationResult, time::Real, i::Integer=0)
     if typeof(sr.solution[1]) <: RecursiveArrayTools.ArrayPartition
         velocities = sr(time).x[1]
         n = size(velocities, 2)
@@ -53,7 +53,7 @@ function get_velocity(sr::SimulationResult, time, i=0)
     end
 end
 
-function get_position(sr::SimulationResult, time::Float64, i=0)
+function get_position(sr::SimulationResult, time::Real, i::Integer=0)
     if typeof(sr.solution[1]) <: RecursiveArrayTools.ArrayPartition
         positions = sr(time).x[2]
         n = size(positions, 2)
@@ -69,7 +69,7 @@ function get_position(sr::SimulationResult, time::Float64, i=0)
     end
 end
 
-function get_position(result::SimulationResult, time_idx::Int=1, i=0)
+function get_position(result::SimulationResult, time_idx::Integer=1, i::Integer=0)
     get_position(result, result.solution.t[time_idx], i)
 end
 
@@ -90,20 +90,20 @@ function temperature(result::SimulationResult, time::Real)
     return temperature
 end
 
-function pressure(sr::SimulationResult, time::Float64)
+function pressure(sr::SimulationResult, time::Real)
 end
 
-function total_energy(sr::SimulationResult, time::Float64)
+function total_energy(sr::SimulationResult, time::Real)
 end
 
 function potential_energy()
 
 end
 
-function kinetic_energy(sr::SimulationResult, time::Float64)
+function kinetic_energy(sr::SimulationResult, time::Real)
     vs = get_velocity(sr, time)
     masses = get_masses(sr.simulation.system)
-    ke = sum(norm.(sum(vs.^2, 1)) .* masses/2)
+    ke = sum(norm.(sum(vs.^2, 1)) .* masses / 2)
     return ke
 end
 
@@ -122,7 +122,7 @@ function load_system_from_file(path::AbstractString)
     return NBodySystem(bodies)
 end
 
-@recipe function g(sr::SimulationResult{<:PotentialNBodySystem}, time::Float64=0.0)
+@recipe function g(sr::SimulationResult{<:PotentialNBodySystem}, time::Real=0)
     solution = sr.solution
     n = div(size(solution[1], 2), 2)
 
@@ -131,13 +131,14 @@ end
     
         xlim --> 1.1 * [minimum(solution[1,1:n,:]), maximum(solution[1,1:n,:])]
         ylim --> 1.1 * [minimum(solution[2,1:n,:]), maximum(solution[2,1:n,:])]  
-        zlim --> 1.1 * [minimum(solution[3,1:n,:]), maximum(solution[3,1:n,:])]  
+        #zlim --> 1.1 * [minimum(solution[3,1:n,:]), maximum(solution[3,1:n,:])]  
     
         seriestype --> :scatter
         markersize --> 5
 
         positions = get_position(sr, time)
         (positions[1,:], positions[2,:], positions[3,:])
+        #(positions[1,:], positions[2,:])
     else
     
         xlim --> 1.1 * [minimum(solution[1,1:n,:]), maximum(solution[1,1:n,:])]
@@ -169,4 +170,5 @@ function Base.next(sr::SimulationResult, state)
     end
 
     (positions[1,:], positions[2,:], positions[3,:]), state + 1
+    #(positions[1,:], positions[2,:]), state + 1
 end
