@@ -50,8 +50,12 @@ end
 
 function Base.show(stream::IO, s::PotentialNBodySystem)
     println(stream, "Potentials: ")
-    for (key, potential) in s.potentials
-        show(stream, potential)
+
+    ordered_list = [:lennard_jones, :electrostatic, :magnetostatic,:gravitational]
+    for potential in ordered_list
+        if potential ∈ keys(s.potentials)
+            show(stream, s.potentials[potential])
+        end
     end
 end
 

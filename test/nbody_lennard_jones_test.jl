@@ -83,6 +83,14 @@ let
     ε = 0.1*e_kin_1
     e_kin_2 = kinetic_energy(result, t2)
     @test e_kin_1 ≈ e_kin_2 atol = ε
+
+    
+    for coordinates in result
+        @test length(coordinates) == 3
+        for i=1:3
+            @test length(coordinates[1]) == 3
+        end
+    end
 end
 
 let default_potential = LennardJonesParameters()

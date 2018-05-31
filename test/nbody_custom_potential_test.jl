@@ -33,4 +33,4 @@ r2 = get_position(simResult, t2, 1)
 
 potential_system = PotentialNBodySystem([p1, p2]; potentials = [:lennard_jones, :electrostatic, :gravitational, :magnetostatic])
 @test sprint(io -> show(io, potential_system)) == 
-"Potentials: \nGravitational:\n\tG:6.67408e-11\nLennard-Jones:\n\tϵ:1.0\n\tσ:1.0\n\tR:2.5\nMagnetostatic:\n\tμ/4π:1.0e-7\nElectrostatic:\n\tk:9.0e9\n"
+"Potentials: \nLennard-Jones:\n\tϵ:1.0\n\tσ:1.0\n\tR:2.5\nElectrostatic:\n\tk:9.0e9\nMagnetostatic:\n\tμ/4π:1.0e-7\nGravitational:\n\tG:6.67408e-11\n"

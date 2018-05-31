@@ -49,13 +49,6 @@ v_actual = norm(get_velocity(sim_result, t2, 2))
 ε = 0.001 * v_expected
 @test v_expected ≈ v_actual atol = ε
 
-for coordinates in sim_result
-    @test length(coordinates) == 3
-    for i=1:3
-        @test length(coordinates[1]) == 2
-    end
-end
-
 
 let default_potential = ElectrostaticParameters()
     @test 9e9 == default_potential.k
