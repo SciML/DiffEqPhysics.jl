@@ -27,3 +27,17 @@ v_actual = norm(get_velocity(sim_result, t2, 2))
 
 ε = 0.001
 @test v_expected ≈ v_actual atol = ε
+
+
+
+let default_potential = MagnetostaticParameters()
+    @test 1e-7 == default_potential.μ_4π
+end
+
+let
+    io = IOBuffer()
+    potential1 = MagnetostaticParameters()
+    potential2 = MagnetostaticParameters(4π)
+    @test sprint(io -> show(io, potential1)) == "Magnetostatic:\n\tμ/4π:1.0e-7\n"
+    @test sprint(io -> show(io, potential2)) == "Magnetostatic:\n\tμ/4π:12.566370614359172\n"
+end

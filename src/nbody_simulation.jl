@@ -29,11 +29,13 @@ function NBodySimulation(system::BasicPotentialSystem,
     NBodySimulation(potential_system, tspan, boundary_conditions, external_electric_field, external_magnetic_field, external_gravitational_field)
 end
 
-NBodySimulation(system::NBodySystem, tspan::Tuple{Float64,Float64}, boundary_conditions::BoundaryConditions) = 
+function NBodySimulation(system::NBodySystem, tspan::Tuple{Float64,Float64}, boundary_conditions::BoundaryConditions)
     NBodySimulation(system, tspan, boundary_conditions, x -> 0, x -> 0, x -> 0)
+end
 
-NBodySimulation(system::NBodySystem, tspan::Tuple{Float64,Float64}) = 
+function NBodySimulation(system::NBodySystem, tspan::Tuple{Float64,Float64})
     NBodySimulation(system, tspan, InfiniteBox(), x -> 0, x -> 0, x -> 0)
+end
 
 function Base.show(stream::IO, s::NBodySimulation)
     print(stream, "Timespan: ")

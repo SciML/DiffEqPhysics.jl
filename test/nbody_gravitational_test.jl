@@ -19,6 +19,21 @@ for j = 1:3, i = 1:3
     @test solution_simo_3[1][i,j] ≈ solution_simo_3[end][i,j] atol = ε
 end
 
+r1 = get_position(sim_result, tspan[1], 1)
+r1_by_index = get_position(sim_result, 1, 1)
+v1 = get_velocity(sim_result, tspan[1], 1)
+masses = get_masses(system)
+for i = 1:3
+    @test r1[i] == (-0.995492, 0.0, 0.0)[i]
+    @test r1_by_index[i] == (-0.995492, 0.0, 0.0)[i]
+    @test v1[i] == (-0.347902, -0.53393, 0.0)[i]
+    @test masses[i] == 1.0
+end
+
+ε = 0.001
+e_kin = 1.218
+@test e_kin ≈ kinetic_energy(sim_result, t1) atol = ε
+
 
 #the same NBodyGravProblem converted into SecondOrderODEProblem
 sim_result = run_simulation(simulation, DPRKN6())
@@ -60,4 +75,16 @@ solution_simo_5 = sim_result.solution;
 ε = 0.01
 for j = 1:5, i = 1:3
     @test solution_simo_5[1][i,j] ≈ solution_simo_5[end][i,j] atol = ε
+end
+
+let default_potential = GravitationalParameters()
+    @test 6.67408e-11 == default_potential.G
+end
+
+let
+    io = IOBuffer()
+    potential1 = GravitationalParameters()
+    potential2 = GravitationalParameters(35.67)
+    @test sprint(io -> show(io, potential1)) == "Gravitational:\n\tG:6.67408e-11\n"
+    @test sprint(io -> show(io, potential2)) == "Gravitational:\n\tG:35.67\n"
 end

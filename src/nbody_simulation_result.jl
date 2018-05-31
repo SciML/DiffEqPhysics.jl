@@ -9,12 +9,12 @@ function Base.show(stream::IO, sr::SimulationResult)
     print(stream, "N: ") 
     show(stream, length(sr.simulation.system.bodies))
     println(stream)
-    show(stream, sr.simulation.system)
+    show(stream, sr.simulation)
     print(stream, "Time steps: ") 
     show(stream, length(sr.solution.t))
     println(stream)
-    print(stream, "t: ") 
-    show(stream, sr.solution.t)
+    print(stream, "t: ", minimum(sr.solution.t), ", ", maximum(sr.solution.t)) 
+    println(stream)
 end
 
 (sr::SimulationResult)(args...; kwargs...) = return sr.solution(args...; kwargs...)
@@ -85,44 +85,19 @@ end
 function temperature(result::SimulationResult, time::Real)
     kb = 1.38e-23
     velocities = get_velocity(result, time)
-    masses = get_masses(simulation.system)
+    masses = get_masses(result.simulation.system)
     temperature = mean(sum(velocities.^2, 1) .* masses) / (3kb)
     return temperature
-end
-
-function pressure(sr::SimulationResult, time::Real)
-end
-
-function total_energy(sr::SimulationResult, time::Real)
-end
-
-function potential_energy()
-
 end
 
 function kinetic_energy(sr::SimulationResult, time::Real)
     vs = get_velocity(sr, time)
     masses = get_masses(sr.simulation.system)
-    ke = sum(norm.(sum(vs.^2, 1)) .* masses / 2)
+    ke = sum(dot(sum(vs.^2, 1),masses / 2))
     return ke
 end
 
-# In future it seems to be convenient to load data for particles from a file
-function load_system_from_file(path::AbstractString)
-    f = open(path)
-    data = readlines(f)
-    n = size(data, 1)
-    data = load_file(path);
-    bodies = Vector{<:Body}
-    for i = 1:n
-        #body = compile_body(data[i])
-        #push!(bodies, body)
-    end
-    
-    return NBodySystem(bodies)
-end
-
-@recipe function g(sr::SimulationResult{<:PotentialNBodySystem}, time::Real=0)
+@recipe function generate_data_for_scatter(sr::SimulationResult{<:PotentialNBodySystem}, time::Real=0)
     solution = sr.solution
     n = div(size(solution[1], 2), 2)
 

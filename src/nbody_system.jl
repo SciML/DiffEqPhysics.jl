@@ -41,6 +41,10 @@ function PotentialNBodySystem(bodies::Vector{<:Body}; potentials::Vector{Symbol}
         paramteres[:gravitational] = GravitationalParameters()
     end
 
+    if :magnetostatic ∈ potentials   
+        paramteres[:magnetostatic] = MagnetostaticParameters()
+    end
+
     PotentialNBodySystem(bodies, paramteres)
 end
 
@@ -51,7 +55,9 @@ function Base.show(stream::IO, s::PotentialNBodySystem)
     end
 end
 
-PotentialNBodySystem(system::PotentialNBodySystem) = system
+function PotentialNBodySystem(system::PotentialNBodySystem) 
+    return system
+end
 
 function PotentialNBodySystem(system::ChargedParticles) 
     pp = ElectrostaticParameters(system.k)

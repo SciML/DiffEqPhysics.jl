@@ -28,3 +28,9 @@ r2 = get_position(simResult, t2, 1)
 ε = 1e-6
 @test 1.5 ≈ v2[1] atol = ε
 @test 1.75 ≈ r2[1] atol = ε
+
+
+
+potential_system = PotentialNBodySystem([p1, p2]; potentials = [:lennard_jones, :electrostatic, :gravitational, :magnetostatic])
+@test sprint(io -> show(io, potential_system)) == 
+"Potentials: \nGravitational:\n\tG:6.67408e-11\nLennard-Jones:\n\tϵ:1.0\n\tσ:1.0\n\tR:2.5\nMagnetostatic:\n\tμ/4π:1.0e-7\nElectrostatic:\n\tk:9.0e9\n"
