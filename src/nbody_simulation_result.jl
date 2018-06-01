@@ -93,28 +93,46 @@ end
 function kinetic_energy(sr::SimulationResult, time::Real)
     vs = get_velocity(sr, time)
     masses = get_masses(sr.simulation.system)
-    ke = sum(dot(sum(vs.^2, 1),masses / 2))
+    ke = sum(dot(sum(vs.^2, 1), masses / 2))
     return ke
+end
+
+function potential_energy(sr::SimulationResult, time::Real)
+    e_potential = 0
+    n = length(sr.simulation.system.bodies)
+    if :lennard_jones ∈ keys(sr.simulation.system.potentials)
+        p = sr.simulation.system.potentials[:lennard_jones]
+        coordinates = get_position(sr, time)
+        e_lj = 0
+        for i = 1:n
+            ri = @SVector [coordinates[1, i], coordinates[2, i], coordinates[3, i]]
+            for j = i + 1:n
+                rj = @SVector [coordinates[1, j], coordinates[2, j], coordinates[3, j]]
+                rij = ri - rj
+                rij_2 = dot(rij, rij)
+                if rij_2 < p.R2
+                    σ_rij_6 = (p.σ2 / rij_2)^3
+                    σ_rij_12 = σ_rij_6^2
+                    e_lj += (σ_rij_12 - σ_rij_6 )
+                end
+            end
+        end 
+        e_potential += 4*p.ϵ*e_lj
+    end
+    e_potential
+end
+
+function total_energy(sr::SimulationResult, time::Real)
+    e_kin = kinetic_energy(sr, time)
+    e_pot = potential_energy(sr, time)
+    e_kin + e_pot
 end
 
 @recipe function generate_data_for_scatter(sr::SimulationResult{<:PotentialNBodySystem}, time::Real=0)
     solution = sr.solution
-    n = div(size(solution[1], 2), 2)
+    n = length(sr.simulation.system.bodies)
 
     if :gravitational ∈ keys(sr.simulation.system.potentials)
-        borders = sr.simulation.boundary_conditions
-    
-        xlim --> 1.1 * [minimum(solution[1,1:n,:]), maximum(solution[1,1:n,:])]
-        ylim --> 1.1 * [minimum(solution[2,1:n,:]), maximum(solution[2,1:n,:])]  
-        #zlim --> 1.1 * [minimum(solution[3,1:n,:]), maximum(solution[3,1:n,:])]  
-    
-        seriestype --> :scatter
-        markersize --> 5
-
-        positions = get_position(sr, time)
-        (positions[1,:], positions[2,:], positions[3,:])
-        #(positions[1,:], positions[2,:])
-    else
     
         xlim --> 1.1 * [minimum(solution[1,1:n,:]), maximum(solution[1,1:n,:])]
         ylim --> 1.1 * [minimum(solution[2,1:n,:]), maximum(solution[2,1:n,:])]        
@@ -126,6 +144,19 @@ end
                 solution
             end
         end
+    else
+        borders = sr.simulation.boundary_conditions
+    
+        xlim --> 1.1 * [minimum(solution[1,1:n,:]), maximum(solution[1,1:n,:])]
+        ylim --> 1.1 * [minimum(solution[2,1:n,:]), maximum(solution[2,1:n,:])]  
+        #zlim --> 1.1 * [minimum(solution[3,1:n,:]), maximum(solution[3,1:n,:])]  
+    
+        seriestype --> :scatter
+        markersize --> 5
+
+        positions = get_position(sr, time)
+        #(positions[1,:], positions[2,:], positions[3,:])
+        (positions[1,:], positions[2,:])
     end
 end
 
