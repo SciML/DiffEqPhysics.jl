@@ -1,4 +1,4 @@
-using StaticArrays, DiffEqBase, OrdinaryDiffEq, RecipesBase
+using StaticArrays, DiffEqBase, OrdinaryDiffEq, RecipesBase, DiffEqCallbacks
 
 include("./nbody_bodies.jl")
 include("./nbody_basic_potentials.jl")

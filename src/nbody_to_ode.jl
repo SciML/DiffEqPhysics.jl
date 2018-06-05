@@ -19,11 +19,11 @@ function pairwise_lennard_jones_acceleration!(dv,
     bodies::Vector{<:MassBody},
     p::LennardJonesParameters,
     pbc::BoundaryConditions)
-
     force = @SVector [0.0, 0.0, 0.0];
     ri = @SVector [rs[1, i], rs[2, i], rs[3, i]]
     
     for j = 1:n
+
         if j != i
             rij = @MVector [ri[1] - rs[1, j], ri[2] - rs[2, j], ri[3] - rs[3, j]]
 
@@ -42,8 +42,7 @@ end
 
 function apply_boundary_conditions!(rij, pbc::PeriodicBoundaryConditions)
     for x in (1, 2, 3) 
-        while (rij[x] > pbc[2x]) rij[x] -= (pbc[2x] - pbc[2x - 1]) end
-        while (rij[x] < pbc[2x - 1]) rij[x] += (pbc[2x] - pbc[2x - 1]) end
+         rij[x] -= (pbc[2x] - pbc[2x - 1])*floor(rij[x]/ (pbc[2x] - pbc[2x - 1]))
     end
 end
 

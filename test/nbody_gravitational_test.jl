@@ -20,7 +20,7 @@ for j = 1:3, i = 1:3
 end
 
 r1 = get_position(sim_result, tspan[1], 1)
-r1_by_index = get_position(sim_result, 1, 1)
+r1_by_index = get_position(sim_result, tspan[1], 1)
 v1 = get_velocity(sim_result, tspan[1], 1)
 masses = get_masses(system)
 for i = 1:3

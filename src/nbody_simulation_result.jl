@@ -19,20 +19,6 @@ end
 
 (sr::SimulationResult)(args...; kwargs...) = return sr.solution(args...; kwargs...)
 
-# Instead of treating NBodySimulation as a DiffEq problem and passing it into a solve method
-# it is better to use a specific function for n-body simulations.
-function run_simulation(s::NBodySimulation, alg_type=Tsit5(), args...; kwargs...)
-    solution = solve(ODEProblem(s), alg_type, args...; kwargs...)
-    return SimulationResult(solution, s)
-end
-
-# this should be a method for integrators designed for the SecondOrderODEProblem (It is worth somehow to sort them from other algorithms)
-function run_simulation(s::NBodySimulation, alg_type::Union{VelocityVerlet,DPRKN6,Yoshida6}, args...; kwargs...)
-    solution = solve(SecondOrderODEProblem(s), alg_type, args...; kwargs...)
-    return SimulationResult(solution, s)
-end
-
-
 function get_velocity(sr::SimulationResult, time::Real, i::Integer=0)
     if typeof(sr.solution[1]) <: RecursiveArrayTools.ArrayPartition
         velocities = sr(time).x[1]
@@ -69,10 +55,6 @@ function get_position(sr::SimulationResult, time::Real, i::Integer=0)
     end
 end
 
-function get_position(result::SimulationResult, time_idx::Integer=1, i::Integer=0)
-    get_position(result, result.solution.t[time_idx], i)
-end
-
 function get_masses(system::NBodySystem)
     n = length(system.bodies)
     masses = zeros(n)
@@ -90,26 +72,32 @@ function temperature(result::SimulationResult, time::Real)
     return temperature
 end
 
-function kinetic_energy(sr::SimulationResult, time::Real)
-    vs = get_velocity(sr, time)
-    masses = get_masses(sr.simulation.system)
-    ke = sum(dot(sum(vs.^2, 1), masses / 2))
+function kinetic_energy(velocities, simulation::NBodySimulation)
+    masses = get_masses(simulation.system)
+    ke = sum(dot(vec(sum(velocities.^2, 1)), masses / 2))
     return ke
 end
 
-function potential_energy(sr::SimulationResult, time::Real)
+function kinetic_energy(sr::SimulationResult, time::Real)
+    vs = get_velocity(sr, time)
+    return kinetic_energy(vs, sr.simulation)
+end
+
+function potential_energy(coordinates, simulation::NBodySimulation)
     e_potential = 0
-    n = length(sr.simulation.system.bodies)
-    if :lennard_jones ∈ keys(sr.simulation.system.potentials)
-        p = sr.simulation.system.potentials[:lennard_jones]
-        coordinates = get_position(sr, time)
+    system = simulation.system
+    n = length(system.bodies)
+    if :lennard_jones ∈ keys(system.potentials)
+        p = system.potentials[:lennard_jones]
         e_lj = 0
         for i = 1:n
             ri = @SVector [coordinates[1, i], coordinates[2, i], coordinates[3, i]]
-            for j = i + 1:n
-                rj = @SVector [coordinates[1, j], coordinates[2, j], coordinates[3, j]]
-                rij = ri - rj
+            for j = i + 1:n                
+                rij = @MVector [ri[1] - coordinates[1, j], ri[2] - coordinates[2, j], ri[3] - coordinates[3, j]]
                 rij_2 = dot(rij, rij)
+
+                apply_boundary_conditions!(rij, simulation.boundary_conditions)
+            
                 if rij_2 < p.R2
                     σ_rij_6 = (p.σ2 / rij_2)^3
                     σ_rij_12 = σ_rij_6^2
@@ -117,9 +105,15 @@ function potential_energy(sr::SimulationResult, time::Real)
                 end
             end
         end 
-        e_potential += 4*p.ϵ*e_lj
+        e_potential += 4 * p.ϵ * e_lj
     end
     e_potential
+end
+
+function potential_energy(sr::SimulationResult, time::Real)
+    e_potential = 0
+    coordinates = get_position(sr, time)
+    return potential_energy(coordinates, sr.simulation)
 end
 
 function total_energy(sr::SimulationResult, time::Real)
@@ -128,7 +122,33 @@ function total_energy(sr::SimulationResult, time::Real)
     e_kin + e_pot
 end
 
-@recipe function generate_data_for_scatter(sr::SimulationResult{<:PotentialNBodySystem}, time::Real=0)
+function initial_energy(simulation::NBodySimulation)
+    (u0, v0, n) = gather_bodies_initial_coordinates(simulation.system)
+    return potential_energy(u0, simulation) + kinetic_energy(v0, simulation) 
+end
+
+# Instead of treating NBodySimulation as a DiffEq problem and passing it into a solve method
+# it is better to use a specific function for n-body simulations.
+function run_simulation(s::NBodySimulation, alg_type=Tsit5(), args...; kwargs...)
+    initial_en = initial_energy(s)
+    function energy_manifold!(residual, u)
+        n = length(s.system.bodies)
+        vs = @view u[:, n+1:end]
+        us = @view u[:,1:n]
+        residual[:,n+1:end] = initial_en - kinetic_energy(vs, s) - potential_energy(us, s)
+    end
+    energy_cb = ManifoldProjection(energy_manifold!)
+    solution = solve(ODEProblem(s), alg_type, args...; kwargs...)
+    return SimulationResult(solution, s)
+end
+
+# this should be a method for integrators designed for the SecondOrderODEProblem (It is worth somehow to sort them from other algorithms)
+function run_simulation(s::NBodySimulation, alg_type::Union{VelocityVerlet,DPRKN6,Yoshida6}, args...; kwargs...)
+    solution = solve(SecondOrderODEProblem(s), alg_type, args...; kwargs...)
+    return SimulationResult(solution, s)
+end
+
+@recipe function generate_data_for_scatter(sr::SimulationResult{<:PotentialNBodySystem}, time::AbstractFloat=0.0)
     solution = sr.solution
     n = length(sr.simulation.system.bodies)
 
@@ -155,8 +175,8 @@ end
         markersize --> 5
 
         positions = get_position(sr, time)
-        #(positions[1,:], positions[2,:], positions[3,:])
-        (positions[1,:], positions[2,:])
+        (positions[1,:], positions[2,:], positions[3,:])
+        #(positions[1,:], positions[2,:])
     end
 end
 
@@ -167,12 +187,11 @@ Base.start(::SimulationResult) = 1
 Base.done(sr::SimulationResult, state) = state > length(sr.solution.t)
 
 function Base.next(sr::SimulationResult, state) 
-    positions = get_position(sr, state)
+    positions = get_position(sr, sr.solution.t[state])
 
     if sr.simulation.boundary_conditions isa PeriodicBoundaryConditions
         L = sr.simulation.boundary_conditions[2]
-        map!(x -> begin while x > L x -= L end; x end, positions, positions)
-        map!(x -> begin while x < 0 x += L end; x end, positions, positions)
+        map!(x ->  x -= L * floor(x / L), positions, positions)
     end
 
     (positions[1,:], positions[2,:], positions[3,:]), state + 1

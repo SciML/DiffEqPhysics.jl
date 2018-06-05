@@ -6,3 +6,4 @@ ForwardDiff 0.5.0
 StaticArrays
 RecursiveArrayTools
 RecipesBase
+DiffEqCallbacks
