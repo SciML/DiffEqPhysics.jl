@@ -13,7 +13,4 @@ include("nbody_simulation.jl")
 
 export HamiltonianProblem, LagrangianProblem, NBodyProblem, plot_orbits
 
-export NBodyGravProblem, MassBody, GravImagingData, solve
-
-
 end # module
