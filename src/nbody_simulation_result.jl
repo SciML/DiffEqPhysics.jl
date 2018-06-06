@@ -93,12 +93,12 @@ function potential_energy(coordinates, simulation::NBodySimulation)
         for i = 1:n
             ri = @SVector [coordinates[1, i], coordinates[2, i], coordinates[3, i]]
             for j = i + 1:n                
-                rij = @MVector [ri[1] - coordinates[1, j], ri[2] - coordinates[2, j], ri[3] - coordinates[3, j]]
-                rij_2 = dot(rij, rij)
-
-                apply_boundary_conditions!(rij, simulation.boundary_conditions)
-            
-                if rij_2 < p.R2
+                rj = @SVector [coordinates[1, j], coordinates[2, j], coordinates[3, j]]
+                
+                rij = apply_boundary_conditions!(ri, rj, simulation.boundary_conditions, p)
+                
+                if rij[1] < Inf
+                    rij_2 = dot(rij, rij)
                     σ_rij_6 = (p.σ2 / rij_2)^3
                     σ_rij_12 = σ_rij_6^2
                     e_lj += (σ_rij_12 - σ_rij_6 )
@@ -148,7 +148,7 @@ function run_simulation(s::NBodySimulation, alg_type::Union{VelocityVerlet,DPRKN
     return SimulationResult(solution, s)
 end
 
-@recipe function generate_data_for_scatter(sr::SimulationResult{<:PotentialNBodySystem}, time::AbstractFloat=0.0)
+@recipe function generate_data_for_scatter(sr::SimulationResult{<:PotentialNBodySystem}, time::Real=0.0)
     solution = sr.solution
     n = length(sr.simulation.system.bodies)
 
@@ -167,6 +167,8 @@ end
     else
         borders = sr.simulation.boundary_conditions
     
+        positions = get_position(sr, time)
+        
         xlim --> 1.1 * [minimum(solution[1,1:n,:]), maximum(solution[1,1:n,:])]
         ylim --> 1.1 * [minimum(solution[2,1:n,:]), maximum(solution[2,1:n,:])]  
         #zlim --> 1.1 * [minimum(solution[3,1:n,:]), maximum(solution[3,1:n,:])]  

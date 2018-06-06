@@ -26,3 +26,7 @@ struct InfiniteBox{cType <: Real} <: BoundaryConditions
 end
 
 InfiniteBox() = InfiniteBox(SVector(-Inf, Inf, -Inf, Inf, -Inf, Inf))
+
+struct CubicPeriodicBoundaryConditions{cType <: Real} <: BoundaryConditions
+    L::cType
+end

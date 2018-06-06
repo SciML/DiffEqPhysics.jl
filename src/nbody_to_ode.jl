@@ -19,34 +19,61 @@ function pairwise_lennard_jones_acceleration!(dv,
     bodies::Vector{<:MassBody},
     p::LennardJonesParameters,
     pbc::BoundaryConditions)
+
     force = @SVector [0.0, 0.0, 0.0];
     ri = @SVector [rs[1, i], rs[2, i], rs[3, i]]
     
     for j = 1:n
 
         if j != i
-            rij = @MVector [ri[1] - rs[1, j], ri[2] - rs[2, j], ri[3] - rs[3, j]]
+            rj = @SVector [rs[1, j], rs[2, j], rs[3, j]]
 
-            apply_boundary_conditions!(rij, pbc)
+            rij = apply_boundary_conditions!(ri, rj, pbc, p)
             
-            rij_2 = dot(rij, rij)
-            σ_rij_6 = (p.σ2 / rij_2)^3
-            σ_rij_12 = σ_rij_6^2
-            if rij_2 < p.R2
-                force += (2 * σ_rij_12 - σ_rij_6 ) * rij / rij_2
-            end            
+            if rij[1] < Inf
+                rij_2 = dot(rij, rij)
+                σ_rij_6 = (p.σ2 / rij_2)^3
+                σ_rij_12 = σ_rij_6^2
+                force += (2 * σ_rij_12 - σ_rij_6 ) * rij / rij_2    
+            end        
         end
     end   
     dv .=  24 * p.ϵ * force / bodies[i].m
 end
 
-function apply_boundary_conditions!(rij, pbc::PeriodicBoundaryConditions)
-    for x in (1, 2, 3) 
-         rij[x] -= (pbc[2x] - pbc[2x - 1])*floor(rij[x]/ (pbc[2x] - pbc[2x - 1]))
+function apply_boundary_conditions!(ri, rj, pbc::PeriodicBoundaryConditions, p::LennardJonesParameters)
+    res = @MVector [Inf, Inf, Inf]
+    for dx in [0,-pbc[2],pbc[2]], dy in [0,-pbc[4],pbc[4]], dz in [0,-pbc[6],pbc[6]]
+        rij = @MVector [ri[1] - rj[1] + dx, ri[2] - rj[2] + dy, ri[3] - rj[3] + dz]
+        for x in (1, 2, 3) 
+            rij[x] -= (pbc[2x] - pbc[2x - 1]) * div(rij[x] , (pbc[2x] - pbc[2x - 1]))
+        end
+        if  dot(rij, rij) < p.R2
+            res = rij
+            break
+        end
     end
+    return res
 end
 
-function apply_boundary_conditions!(rij, pbc::BoundaryConditions)
+function apply_boundary_conditions!(ri, rj, pbc::CubicPeriodicBoundaryConditions, p::LennardJonesParameters)
+    res = @MVector [Inf, Inf, Inf]
+    shifts = @SVector [0,-pbc.L,pbc.L]
+    for dx in shifts, dy in shifts, dz in shifts
+        rij = @MVector [ri[1] - rj[1] + dx, ri[2] - rj[2] + dy, ri[3] - rj[3] + dz]
+        for x in (1, 2, 3) 
+            rij[x] -= pbc.L * div(rij[x] , pbc.L)
+        end
+        if  dot(rij, rij) < p.R2
+            res = rij
+            break
+        end
+    end
+    return res
+end
+
+function apply_boundary_conditions!(ri, rj, pbc::BoundaryConditions, p::PotentialParameters)
+    return ri - rj
 end
 
 function pairwise_electrostatic_acceleration!(dv,
@@ -104,15 +131,15 @@ function magnetostatic_dipdip_acceleration!(dv,
             mj = bodies[j].mm
             rj = @SVector [rs[1, j], rs[2, j], rs[3, j]]
             rij = ri - rj
-            rij4 = dot(rij,rij)^2
-            r =  rij/norm(rij)
+            rij4 = dot(rij, rij)^2
+            r =  rij / norm(rij)
             mir = dot(mi, r)
             mij = dot(mj, r)
-            force += (mi*mij + mj*mir + r*dot(mi,mj) - 5*r*mir*mij)/rij4
+            force += (mi * mij + mj * mir + r * dot(mi, mj) - 5 * r * mir * mij) / rij4
         end
     end
     
-    dv .= 3*p.μ_4π*force / bodies[i].m
+    dv .= 3 * p.μ_4π * force / bodies[i].m
 end
 
 function gather_accelerations_for_potentials(simulation::NBodySimulation{<:PotentialNBodySystem})

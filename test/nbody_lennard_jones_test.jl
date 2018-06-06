@@ -50,7 +50,7 @@ let
     L = 5σ # 10.229σ
     N = 3 # floor(Int, ρ * L^3 / m)
     R = 2.25σ   
-    v_dev = sqrt(kb * T / m)
+    v_dev = sqrt(3*kb * T / m)
     r1 = SVector(L/3, L/3, 2*L/3)
     r2 = SVector(L/3, 2*L/3, L/3)
     r3 = SVector(2*L/3, L/3, L/3)
@@ -61,7 +61,7 @@ let
     p2 = MassBody(r2, v2, m)
     p3 = MassBody(r3, v3, m)
 
-    τ = 1e-13
+    τ = 1e-14
     t1 = 0.0
     t2 = 100τ
 
@@ -72,17 +72,16 @@ let
     
 
     T1 = temperature(result, t1) 
-    T2 = temperature(result, t2)
-
-    ε = 0.1*T1
-    @test T1 ≈ T2 atol = ε
+    ε = 1e-6
+    @test T1 ≈ 120.0 atol = ε
 
     e_kin_1 = m*(dot(v1, v1)+dot(v2, v2) + dot(v3, v3))/2
     @test e_kin_1 == kinetic_energy(result, t1)
 
-    ε = 0.1*e_kin_1
-    e_kin_2 = kinetic_energy(result, t2)
-    @test e_kin_1 ≈ e_kin_2 atol = ε
+    e_tot_1 = total_energy(result, t1)
+    ε = 0.1*e_tot_1
+    e_tot_2 = total_energy(result, t2)
+    @test e_tot_1 ≈ e_tot_2 atol = ε
 
     
     for coordinates in result
