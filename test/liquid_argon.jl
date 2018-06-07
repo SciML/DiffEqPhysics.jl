@@ -52,18 +52,20 @@ const ϵ = T * kb
 const σ = 3.4e-10 # m
 const ρ = 1374 # kg/m^3
 const m = 39.95 * 1.6747 * 1e-27 # kg
-const N = 1000#floor(Int, ρ * L^3 / m)
+const N = 125#floor(Int, ρ * L^3 / m)
 const L = (m*N/ρ)^(1/3)#10.229σ
 const R = 2.25σ   
 const v_dev = sqrt(kb * T / m)
 const τ = 1e-14 # σ/v
 const t1 = 0τ
-const t2 = 400τ
+const t2 = 2000τ
 #bodies = generate_bodies_randomly(N, m, v_dev, L)
 bodies = generate_bodies_in_cell_nodes(N, m, v_dev, L)
 #bodies = generate_bodies_in_line(N, m, v_dev, L)
-parameters = LennardJonesParameters(ϵ, σ, R)
-lj_system = PotentialNBodySystem(bodies, Dict(:lennard_jones => parameters));
-simulation = NBodySimulation(lj_system, (t1, t2), CubicPeriodicBoundaryConditions(L));
+jl_parameters = LennardJonesParameters(ϵ, σ, R)
+pbc = CubicPeriodicBoundaryConditions(L)
+thermostat = AndersenThermostat(0.02, T, kb)
+lj_system = PotentialNBodySystem(bodies, Dict(:lennard_jones => jl_parameters));
+simulation = NBodySimulation(lj_system, (t1, t2), pbc, thermostat);
 #result = run_simulation(simulation, Tsit5())
 result = @time run_simulation(simulation, VelocityVerlet(), dt=τ)

@@ -133,9 +133,9 @@ function run_simulation(s::NBodySimulation, alg_type=Tsit5(), args...; kwargs...
     initial_en = initial_energy(s)
     function energy_manifold!(residual, u)
         n = length(s.system.bodies)
-        vs = @view u[:, n+1:end]
+        vs = @view u[:, n + 1:end]
         us = @view u[:,1:n]
-        residual[:,n+1:end] = initial_en - kinetic_energy(vs, s) - potential_energy(us, s)
+        residual[:,n + 1:end] = initial_en - kinetic_energy(vs, s) - potential_energy(us, s)
     end
     energy_cb = ManifoldProjection(energy_manifold!)
     solution = solve(ODEProblem(s), alg_type, args...; kwargs...)
@@ -144,8 +144,38 @@ end
 
 # this should be a method for integrators designed for the SecondOrderODEProblem (It is worth somehow to sort them from other algorithms)
 function run_simulation(s::NBodySimulation, alg_type::Union{VelocityVerlet,DPRKN6,Yoshida6}, args...; kwargs...)
-    solution = solve(SecondOrderODEProblem(s), alg_type, args...; kwargs...)
+    
+    cb = obtain_callbacks_for_so_ode_problem(s)
+    solution = solve(SecondOrderODEProblem(s), alg_type, args...; callback=cb, kwargs...)
     return SimulationResult(solution, s)
+end
+
+function obtain_callbacks_for_so_ode_problem(s::NBodySimulation)
+    callback_array = Vector{DECallback}()
+
+    if s.thermostat isa AndersenThermostat
+        push!(callback_array, get_andersen_thermostating_callback(s))
+    end
+
+    return CallbackSet(tuple(callback_array...)...)
+end
+
+function get_andersen_thermostating_callback(s::NBodySimulation)
+    p = s.thermostat::AndersenThermostat
+    n = length(s.system.bodies)
+    v_dev = sqrt(p.kb * p.T / s.system.bodies[1].m)
+
+    condition = function (u, t, integrator)
+        true
+    end
+    affect! = function (integrator)
+        for i = 1:n
+            if randn() < p.ν * (integrator.t - integrator.tprev)
+                integrator.u.x[1][:,i] .= v_dev * randn(3)
+            end
+        end
+    end
+    cb = DiscreteCallback(condition, affect!)
 end
 
 @recipe function generate_data_for_scatter(sr::SimulationResult{<:PotentialNBodySystem}, time::Real=0.0)
