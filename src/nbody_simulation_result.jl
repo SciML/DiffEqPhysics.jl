@@ -229,3 +229,55 @@ function Base.next(sr::SimulationResult, state)
     (positions[1,:], positions[2,:], positions[3,:]), state + 1
     #(positions[1,:], positions[2,:]), state + 1
 end
+
+function distancies(result::SimulationResult, time::Real)
+    n = length(result.simulation.system.bodies)
+    cc = get_position(result, time)
+
+    d = Float64[]
+    for i=1:n
+        for j = 1:n
+            if i!=j
+                push!(d, norm(vec(cc[:,i]-cc[:,j])))
+            end
+        end
+    end
+    return d
+end
+
+@recipe function initial_distribution(sim::NBodySimulation{<:WaterSPCFw})
+
+    n = length(sim.system.bodies)
+
+    borders = sim.boundary_conditions
+    
+    (u0, v0, n) = gather_bodies_initial_coordinates(sim.system)
+ 
+    if borders isa PeriodicBoundaryConditions
+        xlim --> 1.1 * [borders[1], borders[2]]
+        ylim --> 1.1 * [borders[3], borders[4]]
+        zlim --> 1.1 * [borders[5], borders[6]]
+    elseif borders isa CubicPeriodicBoundaryConditions
+        xlim --> 1.1 * [0, borders.L]
+        ylim --> 1.1 * [0, borders.L]
+        zlim --> 1.1 * [0, borders.L]
+    end
+    seriestype --> :scatter
+
+    @series begin
+        label --> "O"
+        markersize --> 8
+        markercolor --> :red
+        (u0[1,1:3:3*n-2], u0[2,1:3:3*n-2], u0[3,1:3:3*n-2])
+    end
+
+    @series begin
+        label --> "H"
+        markersize --> 4
+        markercolor --> :green
+        x = vcat(u0[1,2:3:3*n-1],u0[1,3:3:3*n])
+        y = vcat(u0[2,2:3:3*n-1],u0[2,3:3:3*n])
+        z = vcat(u0[3,2:3:3*n-1],u0[3,3:3:3*n])
+        (x, y, z)
+    end
+end

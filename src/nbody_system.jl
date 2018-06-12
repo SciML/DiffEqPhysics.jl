@@ -74,3 +74,14 @@ function PotentialNBodySystem(system::GravitationalSystem)
     potential =  Dict{Symbol,PotentialParameters}(:gravitational => pp)
     PotentialNBodySystem(system.bodies, potential)
 end
+
+struct WaterSPCFw{bType <: Body,pType <: Real} <: NBodySystem
+    bodies::Vector{bType}
+    mH::pType
+    mO::pType
+    qH::pType
+    qO::pType
+    lj_parameters::LennardJonesParameters{pType}
+    e_parameters::ElectrostaticParameters{pType}
+    scpfw_parameters::SPCFwParameters{pType}
+end

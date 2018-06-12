@@ -65,3 +65,10 @@ function Base.show(stream::IO, pp::MagnetostaticParameters)
     print(stream, "\tμ/4π:"); show(stream, pp.μ_4π); 
     println(stream)
 end
+
+struct SPCFwParameters{pType <: Real} <: PotentialParameters
+    rOH::pType
+    ∠HOH::pType
+    kb::pType
+    ka::pType
+end
