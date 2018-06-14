@@ -83,13 +83,6 @@ let
     e_tot_2 = total_energy(result, t2)
     @test e_tot_1 ≈ e_tot_2 atol = ε
 
-    
-    for coordinates in result
-        @test length(coordinates) == 3
-        for i=1:3
-            @test length(coordinates[1]) == 3
-        end
-    end
 end
 
 let default_potential = LennardJonesParameters()
