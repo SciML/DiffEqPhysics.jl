@@ -68,7 +68,7 @@ end
 
 struct SPCFwParameters{pType <: Real} <: PotentialParameters
     rOH::pType
-    ∠HOH::pType
+    aHOH::pType
     kb::pType
     ka::pType
 end
