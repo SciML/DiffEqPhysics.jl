@@ -1,10 +1,10 @@
 using StaticArrays, DiffEqBase, OrdinaryDiffEq, RecipesBase, DiffEqCallbacks
 
 include("./nbody_bodies.jl")
-include("./nbody_basic_potentials.jl")
-include("./nbody_system.jl")
 include("./nbody_boundary_conditions.jl")
 include("./nbody_thermostat.jl")
+include("./nbody_basic_potentials.jl")
+include("./nbody_system.jl")
 
 
 # This structure defines conditions under wich we test our system of n-bodies

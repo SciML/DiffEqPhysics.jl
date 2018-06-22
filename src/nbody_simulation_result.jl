@@ -104,25 +104,68 @@ function potential_energy(coordinates, simulation::NBodySimulation)
     n = length(system.bodies)
     if :lennard_jones ∈ keys(system.potentials)
         p = system.potentials[:lennard_jones]
-        e_lj = 0
-        for i = 1:n
-            ri = @SVector [coordinates[1, i], coordinates[2, i], coordinates[3, i]]
-            for j = i + 1:n                
-                rj = @SVector [coordinates[1, j], coordinates[2, j], coordinates[3, j]]
-                
-                rij = apply_boundary_conditions!(ri, rj, simulation.boundary_conditions, p)
-                
-                if rij[1] < Inf
-                    rij_2 = dot(rij, rij)
-                    σ_rij_6 = (p.σ2 / rij_2)^3
-                    σ_rij_12 = σ_rij_6^2
-                    e_lj += (σ_rij_12 - σ_rij_6 )
-                end
-            end
-        end 
-        e_potential += 4 * p.ϵ * e_lj
+        (ms, indxs) = obtain_data_for_lennard_jones_interaction(system)
+        e_potential += lennard_jones_potential(p, indxs, coordinates, simulation.boundary_conditions)
     end
     e_potential
+end
+
+function potential_energy(coordinates, simulation::NBodySimulation{<:WaterSPCFw})
+    e_potential = 0
+    system = simulation.system
+    p = system.lj_parameters
+    (ms, indxs) = obtain_data_for_lennard_jones_interaction(system)
+    e_potential += lennard_jones_potential(p, indxs, coordinates, simulation.boundary_conditions)
+
+    p = system.e_parameters
+    (qs, ms, indx, exclude) = obtain_data_for_electrostatic_interaction(simulation.system)
+    e_potential += electrostatic_potential(p, indxs, exclude, qs, coordinates, simulation.boundary_conditions)
+end
+
+function lennard_jones_potential(p::LennardJonesParameters, indxs::Vector{<:Integer}, coordinates, pbc::BoundaryConditions)
+    e_lj = 0
+    n = length(indxs)
+    @inbounds for ind_i = 1:n
+        i = indxs[ind_i]
+        ri = @SVector [coordinates[1, i], coordinates[2, i], coordinates[3, i]]
+        for ind_j = ind_i + 1:n    
+            j = indxs[ind_j]          
+            rj = @SVector [coordinates[1, j], coordinates[2, j], coordinates[3, j]]
+            
+            (rij, rij_2, success) = apply_boundary_conditions!(ri, rj, pbc, p.R2)
+            
+            if success
+                σ_rij_6 = (p.σ2 / rij_2)^3
+                σ_rij_12 = σ_rij_6^2
+                e_lj += (σ_rij_12 - σ_rij_6 )
+            end
+        end
+    end 
+    return 4 * p.ϵ * e_lj
+end
+
+function electrostatic_potential(p::ElectrostaticParameters, indxs::Vector{<:Integer}, exclude::Dict{Int,Vector{Int}}, qs, rs, pbc::BoundaryConditions)
+    e_el = 0
+
+    n = length(indxs)
+    @inbounds for ind_i = 1:n
+        i = indxs[ind_i]
+        ri = @SVector [rs[1, i], rs[2, i], rs[3, i]]
+        e_el_i = 0
+        for ind_j = ind_i + 1:n    
+            j = indxs[ind_j] 
+            if !in(j, exclude[i])
+                rj = @SVector [rs[1, j], rs[2, j], rs[3, j]]
+
+                (rij, rij_2, success) = apply_boundary_conditions!(ri, rj, pbc, p.R2)
+                if success
+                    e_el_i += qs[j]/ norm(ri - rj)
+                end
+            end
+        end    
+        e_el+=e_el_i*qs[i]
+    end
+    e_el*p.k
 end
 
 function potential_energy(sr::SimulationResult, time::Real)
@@ -211,17 +254,20 @@ end
         end
     else
         borders = sr.simulation.boundary_conditions
-    
+        if borders isa PeriodicBoundaryConditions
+            xlim --> 1.1 * [borders[1], borders[2]]
+            ylim --> 1.1 * [borders[3], borders[4]]
+            zlim --> 1.1 * [borders[5], borders[6]]
+        elseif borders isa CubicPeriodicBoundaryConditions
+            xlim --> 1.1 * [0, borders.L]
+            ylim --> 1.1 * [0, borders.L]
+            zlim --> 1.1 * [0, borders.L]
+        end
         positions = get_position(sr, time)
-        
-        xlim --> 1.1 * [minimum(solution[1,1:n,:]), maximum(solution[1,1:n,:])]
-        ylim --> 1.1 * [minimum(solution[2,1:n,:]), maximum(solution[2,1:n,:])]  
-        #zlim --> 1.1 * [minimum(solution[3,1:n,:]), maximum(solution[3,1:n,:])]  
-    
+            
         seriestype --> :scatter
         markersize --> 5
 
-        positions = get_position(sr, time)
         (positions[1,:], positions[2,:], positions[3,:])
         #(positions[1,:], positions[2,:])
     end
