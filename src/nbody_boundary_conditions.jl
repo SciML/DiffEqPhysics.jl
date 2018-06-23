@@ -69,3 +69,8 @@ function apply_boundary_conditions!(ri, rj, pbc::CubicPeriodicBoundaryConditions
     end
     return (rij, rij2, success)
 end
+
+function apply_boundary_conditions!(ri, rj, pbc::BoundaryConditions, R2)
+    rij = ri - rj
+    (rij, dot(rij,rij),true)
+end

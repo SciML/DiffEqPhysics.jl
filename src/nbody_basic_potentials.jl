@@ -115,14 +115,14 @@ function pairwise_electrostatic_acceleration!(dv,
     n::Integer,
     qs::Vector{<:Real},
     ms::Vector{<:Real},
-    exclude::Vector{<:Integer},
+    exclude::Dict{Int, Vector{Int}},
     p::ElectrostaticParameters,
     pbc::BoundaryConditions)
 
     force = @SVector [0.0, 0.0, 0.0];
     ri = @SVector [rs[1, i], rs[2, i], rs[3, i]]
     @inbounds for j = 1:n
-        if !in(j, exclude)
+        if !in(j, exclude[i])
             rj = @SVector [rs[1, j], rs[2, j], rs[3, j]]
 
             (rij, rij_2, success) = apply_boundary_conditions!(ri, rj, pbc, p.R2)
@@ -185,14 +185,13 @@ end
 function harmonic_bond_potential_acceleration!(dv, 
     rs,
     i::Integer,
-    n::Integer,
     ms::Vector{<:Real},
-    neighbouhood::Vector{Vector{Tuple{Int,Float64}}},
+    neighbouhoods::Dict{Int,Vector{Tuple{Int,Float64}}},
     p::SPCFwParameters)
     
     force = @SVector [0.0, 0.0, 0.0];
     ri = @SVector [rs[1, i], rs[2, i], rs[3, i]]
-    @inbounds for (j, k) in neighbouhood[i]
+    @inbounds for (j, k) in neighbouhoods[i]
         rj = @SVector [rs[1, j], rs[2, j], rs[3, j]]
         rij = ri - rj
         r = norm(rij)

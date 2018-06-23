@@ -29,8 +29,6 @@ Base.done(sr::SimulationResult, state) = state > length(sr.solution.t)
 function Base.next(sr::SimulationResult, state) 
     positions = get_position(sr, sr.solution.t[state])
 
-    #(positions[1,:], positions[2,:], positions[3,:]), state + 1
-    #(positions[1,:], positions[2,:]), state + 1
     (sr, sr.solution.t[state]), state + 1
 end
 
@@ -79,6 +77,17 @@ function get_masses(system::NBodySystem)
     return masses
 end
 
+function get_masses(system::WaterSPCFw)
+    n = length(system.bodies)
+    ms = zeros(Real, 3 * n)
+    for i = 1:n
+        ms[3 * (i - 1) + 1] = system.mO
+        ms[3 * (i - 1) + 2] = system.mH
+        ms[3 * (i - 1) + 3] = system.mH
+    end 
+    return ms
+end
+
 function temperature(result::SimulationResult, time::Real)
     kb = 1.38e-23
     velocities = get_velocity(result, time)
@@ -87,15 +96,31 @@ function temperature(result::SimulationResult, time::Real)
     return temperature
 end
 
-function kinetic_energy(velocities, simulation::NBodySimulation)
-    masses = get_masses(simulation.system)
+function temperature(result::SimulationResult{<:WaterSPCFw}, time::Real)
+    kb = 1.38e-23
+    system = result.simulation.system
+    n = length(system.bodies)
+    vs = get_velocity(result, time)
+    mH2O = system.mO+2*system.mH
+    v2 = zeros(n)
+    for i = 1:n
+        indO, indH1, indH2 = 3 * (i - 1) + 1, 3 * (i - 1) + 2, 3 * (i - 1) + 3
+        v_c = (vs[:,indO]*system.mO+vs[:,indH1]*system.mH+vs[:,indH2]*system.mH)/mH2O
+        v2 = dot(v_c,v_c)
+    end
+    temperature = mean(v2) * mH2O / (3kb)
+    return temperature
+end
+
+function kinetic_energy(velocities, masses)
     ke = sum(dot(vec(sum(velocities.^2, 1)), masses / 2))
     return ke
 end
 
 function kinetic_energy(sr::SimulationResult, time::Real)
     vs = get_velocity(sr, time)
-    return kinetic_energy(vs, sr.simulation)
+    ms = get_masses(sr.simulation.system)
+    return kinetic_energy(vs, ms)
 end
 
 function potential_energy(coordinates, simulation::NBodySimulation)
@@ -120,6 +145,15 @@ function potential_energy(coordinates, simulation::NBodySimulation{<:WaterSPCFw}
     p = system.e_parameters
     (qs, ms, indx, exclude) = obtain_data_for_electrostatic_interaction(simulation.system)
     e_potential += electrostatic_potential(p, indxs, exclude, qs, coordinates, simulation.boundary_conditions)
+
+    p = system.scpfw_parameters
+    (ms, neighbouhoods) = obtain_data_for_harmonic_bond_interaction(simulation.system, p)
+    e_potential += harmonic_bonds_potential(p, coordinates, ms, neighbouhoods)
+
+    p = system.scpfw_parameters
+    (ms, bonds) = obtain_data_for_valence_angle_harmonic_interaction(simulation.system)
+    e_potential += valence_angle_harmonic_potential(coordinates, bonds)
+    e_potential
 end
 
 function lennard_jones_potential(p::LennardJonesParameters, indxs::Vector{<:Integer}, coordinates, pbc::BoundaryConditions)
@@ -141,6 +175,7 @@ function lennard_jones_potential(p::LennardJonesParameters, indxs::Vector{<:Inte
             end
         end
     end 
+
     return 4 * p.ϵ * e_lj
 end
 
@@ -159,13 +194,55 @@ function electrostatic_potential(p::ElectrostaticParameters, indxs::Vector{<:Int
 
                 (rij, rij_2, success) = apply_boundary_conditions!(ri, rj, pbc, p.R2)
                 if success
-                    e_el_i += qs[j]/ norm(ri - rj)
+                    e_el_i += qs[j] / norm(ri - rj)
                 end
             end
         end    
-        e_el+=e_el_i*qs[i]
+        e_el += e_el_i * qs[i]
     end
-    e_el*p.k
+
+    return e_el * p.k
+end
+
+function harmonic_bonds_potential(p::SPCFwParameters,
+    rs,
+    ms::Vector{<:Real},
+    neighborhoods::Dict{Int,Vector{Tuple{Int,Float64}}})
+
+    e_harmonic = 0
+    
+    @inbounds for (i, neighborhood) ∈ neighborhoods
+        ri = @SVector [rs[1, i], rs[2, i], rs[3, i]]
+        for (j, k) in neighborhood
+            rj = @SVector [rs[1, j], rs[2, j], rs[3, j]]
+            rij = ri - rj
+            r = norm(rij)
+            d = r - p.rOH
+            e_harmonic += d^2 * k
+        end
+    end
+    return e_harmonic
+end
+
+function valence_angle_harmonic_potential(
+    rs,
+    bonds::Vector{Tuple{Int, Int, Int, Float64, Float64}}
+    )
+
+    e_valence = 0
+
+    for (a,b,c,valence_angle, k) ∈ bonds
+        ra = @SVector [rs[1, a], rs[2, a], rs[3, a]]
+        rb = @SVector [rs[1, b], rs[2, b], rs[3, b]]
+        rc = @SVector [rs[1, c], rs[2, c], rs[3, c]]
+
+        rba = ra - rb
+        rbc = rc - rb
+
+        currenct_angle = acos(dot(rba, rbc) / (norm(rba) * norm(rbc)))        
+        e_valence += 2 * k * (currenct_angle - valence_angle)^2
+    end
+    return e_valence
 end
 
 function potential_energy(sr::SimulationResult, time::Real)
@@ -188,21 +265,12 @@ end
 # Instead of treating NBodySimulation as a DiffEq problem and passing it into a solve method
 # it is better to use a specific function for n-body simulations.
 function run_simulation(s::NBodySimulation, alg_type=Tsit5(), args...; kwargs...)
-    initial_en = initial_energy(s)
-    function energy_manifold!(residual, u)
-        n = length(s.system.bodies)
-        vs = @view u[:, n + 1:end]
-        us = @view u[:,1:n]
-        residual[:,n + 1:end] = initial_en - kinetic_energy(vs, s) - potential_energy(us, s)
-    end
-    energy_cb = ManifoldProjection(energy_manifold!)
     solution = solve(ODEProblem(s), alg_type, args...; kwargs...)
     return SimulationResult(solution, s)
 end
 
 # this should be a method for integrators designed for the SecondOrderODEProblem (It is worth somehow to sort them from other algorithms)
 function run_simulation(s::NBodySimulation, alg_type::Union{VelocityVerlet,DPRKN6,Yoshida6}, args...; kwargs...)
-    
     cb = obtain_callbacks_for_so_ode_problem(s)
     solution = solve(SecondOrderODEProblem(s), alg_type, args...; callback=cb, kwargs...)
     return SimulationResult(solution, s)
