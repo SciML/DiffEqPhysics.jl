@@ -83,6 +83,13 @@ let
     e_tot_2 = total_energy(result, t2)
     @test e_tot_1 ≈ e_tot_2 atol = ε
 
+    simulation = NBodySimulation(lj_system, (t1, t2), CubicPeriodicBoundaryConditions(L));
+    result = run_simulation(simulation, VelocityVerlet(), dt=τ)
+    e_tot_1 = total_energy(result, t1)
+    ε = 0.1*e_tot_1
+    e_tot_2 = total_energy(result, t2)
+    @test e_tot_1 ≈ e_tot_2 atol = ε
+
 end
 
 let default_potential = LennardJonesParameters()

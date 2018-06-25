@@ -221,7 +221,7 @@ function harmonic_bonds_potential(p::SPCFwParameters,
             e_harmonic += d^2 * k
         end
     end
-    return e_harmonic
+    return e_harmonic/4
 end
 
 function valence_angle_harmonic_potential(
@@ -240,9 +240,9 @@ function valence_angle_harmonic_potential(
         rbc = rc - rb
 
         currenct_angle = acos(dot(rba, rbc) / (norm(rba) * norm(rbc)))        
-        e_valence += 2 * k * (currenct_angle - valence_angle)^2
+        e_valence += k * (currenct_angle - valence_angle)^2
     end
-    return e_valence
+    return e_valence/2
 end
 
 function potential_energy(sr::SimulationResult, time::Real)

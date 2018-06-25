@@ -54,6 +54,10 @@ let default_potential = ElectrostaticParameters()
     @test 9e9 == default_potential.k
 end
 
+let default_potential = ElectrostaticParameters(k, 8.0)
+    @test 64.0 == default_potential.R2
+end
+
 let
     io = IOBuffer()
     potential1 = ElectrostaticParameters()

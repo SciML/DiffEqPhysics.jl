@@ -222,22 +222,7 @@ function valence_angle_potential_acceleration!(dv,
     pc = normalize(cross(rcb, rbaXbc))
 
     cosine = dot(rba, rbc) / (norm(rba) * norm(rbc))
-    
-    if cosine>1 || cosine<-1
-        println("Achtung! Cosine: ", cosine)
-        println("Achtung! rba: ", rba)
-        println("Achtung! rbc: ", rbc)
-        println("$a, $b ,$c")
-        display(rbc)
-        display(rba)
-        display(ra)
-        display(rb)
-        display(rc)
-
-        global RBC = rbc
-        global RBA = rba
-    end
-    
+   
     if cosine>1
         cosine = 1
     elseif cosine<-1
@@ -245,7 +230,7 @@ function valence_angle_potential_acceleration!(dv,
     end
     aHOH = acos(cosine)
     
-    force = -2 * p.ka * (aHOH - p.aHOH)
+    force = - p.ka * (aHOH - p.aHOH)
     force_a = pa * force / norm(rba)
     force_c = pc * force / norm(rbc)
     force_b = -(force_a + force_c)
