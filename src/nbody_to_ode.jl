@@ -139,7 +139,7 @@ function obtain_data_for_electrostatic_interaction(system::PotentialNBodySystem)
     n = length(bodies)
     qs = zeros(Real, n)
     ms = zeros(Real, n)
-    indxs = 1:n
+    indxs = collect(1:n)
     exclude = Dict{Int, Vector{Int}}()
     for i = 1:n
         qs[i] = bodies[i].q
@@ -154,7 +154,7 @@ function obtain_data_for_electrostatic_interaction(system::WaterSPCFw)
     n = length(bodies)
     qs = zeros(Real, 3 * n)
     ms = zeros(Real, 3 * n)
-    indxs = 1:3*n
+    indxs = collect(1:3*n)
     exclude = Dict{Int, Vector{Int}}()
     for i = 1:n
         Oind = 3 * (i - 1) + 1

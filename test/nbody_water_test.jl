@@ -55,7 +55,7 @@ let
         @test (ang - ∠HOH)/∠HOH ≈ 0.0 atol = ε
     end
 
-    e_tot_1 = total_energy.(result, t1);
-    e_tot_2 = total_energy.(result, t2);
+    e_tot_1 = total_energy.(result, t1)
+    e_tot_2 = total_energy.(result, t2)
     #@test (e_tot_1 - e_tot_2)/e_tot_1 ≈ 0.0 atol = ε
 end

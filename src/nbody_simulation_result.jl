@@ -101,12 +101,12 @@ function temperature(result::SimulationResult{<:WaterSPCFw}, time::Real)
     system = result.simulation.system
     n = length(system.bodies)
     vs = get_velocity(result, time)
-    mH2O = system.mO+2*system.mH
+    mH2O = system.mO + 2 * system.mH
     v2 = zeros(n)
     for i = 1:n
         indO, indH1, indH2 = 3 * (i - 1) + 1, 3 * (i - 1) + 2, 3 * (i - 1) + 3
-        v_c = (vs[:,indO]*system.mO+vs[:,indH1]*system.mH+vs[:,indH2]*system.mH)/mH2O
-        v2 = dot(v_c,v_c)
+        v_c = (vs[:,indO] * system.mO + vs[:,indH1] * system.mH + vs[:,indH2] * system.mH) / mH2O
+        v2 = dot(v_c, v_c)
     end
     temperature = mean(v2) * mH2O / (3kb)
     return temperature
@@ -132,6 +132,12 @@ function potential_energy(coordinates, simulation::NBodySimulation)
         (ms, indxs) = obtain_data_for_lennard_jones_interaction(system)
         e_potential += lennard_jones_potential(p, indxs, coordinates, simulation.boundary_conditions)
     end
+
+    if :electrostatic ∈ keys(system.potentials)
+        p = system.potentials[:electrostatic]
+        (qs, ms, indxs, exclude) = obtain_data_for_electrostatic_interaction(simulation.system)
+        e_potential += electrostatic_potential(p, indxs, exclude, qs, coordinates, simulation.boundary_conditions)
+    end
     e_potential
 end
 
@@ -143,7 +149,7 @@ function potential_energy(coordinates, simulation::NBodySimulation{<:WaterSPCFw}
     e_potential += lennard_jones_potential(p, indxs, coordinates, simulation.boundary_conditions)
 
     p = system.e_parameters
-    (qs, ms, indx, exclude) = obtain_data_for_electrostatic_interaction(simulation.system)
+    (qs, ms, indxs, exclude) = obtain_data_for_electrostatic_interaction(simulation.system)
     e_potential += electrostatic_potential(p, indxs, exclude, qs, coordinates, simulation.boundary_conditions)
 
     p = system.scpfw_parameters
@@ -221,17 +227,15 @@ function harmonic_bonds_potential(p::SPCFwParameters,
             e_harmonic += d^2 * k
         end
     end
-    return e_harmonic/4
+    return e_harmonic / 4
 end
 
-function valence_angle_harmonic_potential(
-    rs,
-    bonds::Vector{Tuple{Int, Int, Int, Float64, Float64}}
-    )
+function valence_angle_harmonic_potential(rs,
+    bonds::Vector{Tuple{Int,Int,Int,Float64,Float64}})
 
     e_valence = 0
 
-    for (a,b,c,valence_angle, k) ∈ bonds
+    for (a, b, c, valence_angle, k) ∈ bonds
         ra = @SVector [rs[1, a], rs[2, a], rs[3, a]]
         rb = @SVector [rs[1, b], rs[2, b], rs[3, b]]
         rc = @SVector [rs[1, c], rs[2, c], rs[3, c]]
@@ -242,7 +246,7 @@ function valence_angle_harmonic_potential(
         currenct_angle = acos(dot(rba, rbc) / (norm(rba) * norm(rbc)))        
         e_valence += k * (currenct_angle - valence_angle)^2
     end
-    return e_valence/2
+    return e_valence / 2
 end
 
 function potential_energy(sr::SimulationResult, time::Real)
@@ -321,6 +325,7 @@ end
             end
         end
     else
+        positions = get_position(sr, time)
         borders = sr.simulation.boundary_conditions
         if borders isa PeriodicBoundaryConditions
             xlim --> 1.1 * [borders[1], borders[2]]
@@ -330,9 +335,10 @@ end
             xlim --> 1.1 * [0, borders.L]
             ylim --> 1.1 * [0, borders.L]
             zlim --> 1.1 * [0, borders.L]
+            map!(x ->  x -= borders.L * floor(x / borders.L), positions, positions)    
         end
-        positions = get_position(sr, time)
-            
+
+        
         seriestype --> :scatter
         markersize --> 5
 
@@ -394,4 +400,104 @@ end
         z = vcat(cc[3,2:3:3 * n - 1], cc[3,3:3:3 * n])
         (x, y, z)
     end
+end
+
+function rdf(sr::SimulationResult)
+    n = length(sr.simulation.system.bodies)
+    pbc = sr.simulation.boundary_conditions
+    
+    (ms, indxs) = obtain_data_for_lennard_jones_interaction(sr.simulation.system)
+    indlen = length(indxs)
+
+    maxbin = 1000
+    dr = pbc.L / maxbin
+    hist = zeros(maxbin)
+    for t ∈ sr.solution.t
+        cc = get_position(sr, t)
+        for ind_i = 1:indlen
+            i = indxs[ind_i]
+            ri = @SVector [cc[1, i], cc[2, i], cc[3, i]]
+            for ind_j = ind_i + 1:indlen    
+                j = indxs[ind_j]    
+                rj = @SVector [cc[1, j], cc[2, j], cc[3, j]]
+
+                (rij, rij_2, success) = apply_boundary_conditions!(ri, rj, pbc, (0.5 * pbc.L)^2)
+
+                if success
+                    rij_1 = sqrt(rij_2)
+                    bin = ceil(Int, rij_1 / dr)
+                    if bin <= maxbin
+                        hist[bin] += 2 
+                    end
+                end
+            end
+        end
+    end
+
+    c = 4 / 3 * π * indlen / pbc.L^3
+
+    gr = zeros(maxbin)
+    rs = zeros(maxbin)
+    tlen = length(sr.solution.t)
+    for bin = 1:maxbin
+        rlower = (bin - 1) * dr
+        rupper = rlower + dr
+        nideal = c * (rupper^3 - rlower^3)
+        gr[bin] = (hist[bin] / (tlen * indlen)) / nideal
+        rs[bin] = rlower + dr / 2
+    end
+
+    return (rs, gr)
+end
+
+function msd(sr::SimulationResult{<:PotentialNBodySystem})
+    n = length(sr.simulation.system.bodies)
+    
+    (ms, indxs) = obtain_data_for_lennard_jones_interaction(sr.simulation.system)
+    indlen = length(indxs)
+
+    ts = sr.solution.t
+    tlen = length(time)
+    dr2 = zeros(length(ts))
+
+    cc0 = get_position(sr, ts[1])
+
+    for t =1:tlen
+        cc = get_position(sr, ts[t])
+        for ind_i = 1:indlen
+            i = indxs[ind_i]
+            dr = @SVector [cc[1, i]-cc0[1,i], cc[2, i]-cc0[2,i], cc[3, i]-cc0[3,i]]
+            
+            dr2[t] += dot(dr,dr)
+        end
+        dr2[t] /= indlen
+    end
+
+    (time, dr2)
+end
+
+function msd(sr::SimulationResult{<:WaterSPCFw})
+    n = length(sr.simulation.system.bodies)
+    
+    mO = sr.simulation.system.mO
+    mH = sr.simulation.system.mH
+
+    ts = sr.solution.t
+    tlen = length(ts)
+    dr2 = zeros(tlen)
+
+    cc0 = get_position(sr, ts[1])
+            
+    for t =1:tlen
+        cc = get_position(sr, ts[t])
+        for i = 1:n
+            indO, indH1, indH2 = 3*(i-1)+1, 3*(i-1)+2, 3*(i-1)+3
+            dr = ((cc[:,indO]-cc0[:,indO])*mO+(cc[:,indH1]-cc0[:,indH1])*mH+(cc[:,indH2]-cc0[:,indH2])*mH)/(2*mH+mO)
+            
+            dr2[t] += dot(dr,dr)
+        end
+        dr2[t] /= n
+    end
+
+    (ts, dr2)
 end
