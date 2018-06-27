@@ -90,6 +90,13 @@ let
     e_tot_2 = total_energy(result, t2)
     @test e_tot_1 ≈ e_tot_2 atol = ε
 
+    (ts, mean_square_displacement) = msd(result)
+    @test mean_square_displacement[1]<mean_square_displacement[end]
+
+    (rs, grs) = rdf(result)
+    (val, ind) = findmax(grs)
+    @test (rs[ind]/σ) ≈ 1.0 atol = 1.0
+
 end
 
 let default_potential = LennardJonesParameters()

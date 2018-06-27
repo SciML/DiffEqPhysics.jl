@@ -27,8 +27,6 @@ Base.start(::SimulationResult) = 1
 Base.done(sr::SimulationResult, state) = state > length(sr.solution.t)
 
 function Base.next(sr::SimulationResult, state) 
-    positions = get_position(sr, sr.solution.t[state])
-
     (sr, sr.solution.t[state]), state + 1
 end
 
@@ -45,9 +43,9 @@ function get_velocity(sr::SimulationResult, time::Real, i::Integer=0)
         velocities = sr(time)
         n = div(size(velocities, 2), 2)
         if i <= 0
-            return velocities[:, n + 1:end]
+            return @view velocities[:, n + 1:end]
         else
-            return velocities[:, n + i]
+            return @view velocities[:, n + i]
         end
     end
 end
@@ -62,9 +60,9 @@ function get_position(sr::SimulationResult, time::Real, i::Integer=0)
     end
 
     if i <= 0
-        return positions[:, 1:n]
+        return @view positions[:, 1:n]
     else
-        return positions[:, i]
+        return @view positions[:, i]
     end
 end
 
@@ -174,11 +172,13 @@ function lennard_jones_potential(p::LennardJonesParameters, indxs::Vector{<:Inte
             
             (rij, rij_2, success) = apply_boundary_conditions!(ri, rj, pbc, p.R2)
             
-            if success
-                σ_rij_6 = (p.σ2 / rij_2)^3
-                σ_rij_12 = σ_rij_6^2
-                e_lj += (σ_rij_12 - σ_rij_6 )
+            if !success
+                rij_2 = p.R2
             end
+            
+            σ_rij_6 = (p.σ2 / rij_2)^3
+            σ_rij_12 = σ_rij_6^2
+            e_lj += (σ_rij_12 - σ_rij_6 )
         end
     end 
 
@@ -189,7 +189,7 @@ function electrostatic_potential(p::ElectrostaticParameters, indxs::Vector{<:Int
     e_el = 0
 
     n = length(indxs)
-    @inbounds for ind_i = 1:n
+    for ind_i = 1:n
         i = indxs[ind_i]
         ri = @SVector [rs[1, i], rs[2, i], rs[3, i]]
         e_el_i = 0
@@ -199,9 +199,11 @@ function electrostatic_potential(p::ElectrostaticParameters, indxs::Vector{<:Int
                 rj = @SVector [rs[1, j], rs[2, j], rs[3, j]]
 
                 (rij, rij_2, success) = apply_boundary_conditions!(ri, rj, pbc, p.R2)
-                if success
-                    e_el_i += qs[j] / norm(ri - rj)
+                if !success
+                    rij = p.R
                 end
+                
+                e_el_i += qs[j] / norm(rij)
             end
         end    
         e_el += e_el_i * qs[i]
@@ -263,7 +265,8 @@ end
 
 function initial_energy(simulation::NBodySimulation)
     (u0, v0, n) = gather_bodies_initial_coordinates(simulation.system)
-    return potential_energy(u0, simulation) + kinetic_energy(v0, simulation) 
+    ms = get_masses(simulation.system)
+    return potential_energy(u0, simulation) + kinetic_energy(v0, ms) 
 end
 
 # Instead of treating NBodySimulation as a DiffEq problem and passing it into a solve method
@@ -426,7 +429,7 @@ function rdf(sr::SimulationResult)
                 if success
                     rij_1 = sqrt(rij_2)
                     bin = ceil(Int, rij_1 / dr)
-                    if bin <= maxbin
+                    if bin > 1 && bin <= maxbin
                         hist[bin] += 2 
                     end
                 end
@@ -457,23 +460,23 @@ function msd(sr::SimulationResult{<:PotentialNBodySystem})
     indlen = length(indxs)
 
     ts = sr.solution.t
-    tlen = length(time)
+    tlen = length(ts)
     dr2 = zeros(length(ts))
 
     cc0 = get_position(sr, ts[1])
 
-    for t =1:tlen
+    for t = 1:tlen
         cc = get_position(sr, ts[t])
         for ind_i = 1:indlen
             i = indxs[ind_i]
-            dr = @SVector [cc[1, i]-cc0[1,i], cc[2, i]-cc0[2,i], cc[3, i]-cc0[3,i]]
+            dr = @SVector [cc[1, i] - cc0[1,i], cc[2, i] - cc0[2,i], cc[3, i] - cc0[3,i]]
             
-            dr2[t] += dot(dr,dr)
+            dr2[t] += dot(dr, dr)
         end
         dr2[t] /= indlen
     end
 
-    (time, dr2)
+    (ts, dr2)
 end
 
 function msd(sr::SimulationResult{<:WaterSPCFw})
@@ -488,13 +491,13 @@ function msd(sr::SimulationResult{<:WaterSPCFw})
 
     cc0 = get_position(sr, ts[1])
             
-    for t =1:tlen
+    for t = 1:tlen
         cc = get_position(sr, ts[t])
         for i = 1:n
-            indO, indH1, indH2 = 3*(i-1)+1, 3*(i-1)+2, 3*(i-1)+3
-            dr = ((cc[:,indO]-cc0[:,indO])*mO+(cc[:,indH1]-cc0[:,indH1])*mH+(cc[:,indH2]-cc0[:,indH2])*mH)/(2*mH+mO)
+            indO, indH1, indH2 = 3 * (i - 1) + 1, 3 * (i - 1) + 2, 3 * (i - 1) + 3
+            dr = ((cc[:,indO] - cc0[:,indO]) * mO + (cc[:,indH1] - cc0[:,indH1]) * mH + (cc[:,indH2] - cc0[:,indH2]) * mH) / (2 * mH + mO)
             
-            dr2[t] += dot(dr,dr)
+            dr2[t] += dot(dr, dr)
         end
         dr2[t] /= n
     end

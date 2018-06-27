@@ -1,3 +1,4 @@
+println("====  Water SPC/Fw test   ====")
 let
     const qe = 1.6e-19
     const Na = 6.022e23
@@ -7,13 +8,13 @@ let
     const σOO = 3.165492e-10 # m
     const ρ = 900 # kg/m^3
     const mO = 15.999 * 1.6747 * 1e-27 # kg
-    const mH = 1.00794 * 1.6747 * 1e-27#
+    const mH = 1.00794 * 1.6747 * 1e-27# kg
     const mH2O = mO+2*mH
     const N = 216#floor(Int, ρ * L^3 / m)
     const L = (mH2O*N/ρ)^(1/3)#10.229σ
     const R = 9e-10 # 3*σOO  
     const Rel = 0.45*L
-    const v_dev = sqrt(kb * T /mH2O)
+    const v_dev = sqrt(3*kb * T /mH2O)
     const τ = 1e-15 # σ/v
     const t1 = 0τ
     const t2 = 10τ 
@@ -56,6 +57,22 @@ let
     end
 
     e_tot_1 = total_energy.(result, t1)
+    e_tot_init = initial_energy(simulation)
+    @test e_tot_1 == e_tot_init
+
     e_tot_2 = total_energy.(result, t2)
     #@test (e_tot_1 - e_tot_2)/e_tot_1 ≈ 0.0 atol = ε
+
+    temperature_1 = temperature(result, t1)
+    @test temperature_1 == T 
+
+    count_plotting_data = 0
+    for plotting_data ∈ result
+        count_plotting_data+=1
+        @test plotting_data[2] == result.solution.t[count_plotting_data]
+    end
+    @test count_plotting_data == length(result.solution.t)
+
+    (ts, mean_square_displacement) = msd(result)
+    @test mean_square_displacement[1]<mean_square_displacement[end]
 end

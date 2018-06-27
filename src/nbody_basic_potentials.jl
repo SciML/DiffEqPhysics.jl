@@ -127,7 +127,7 @@ function pairwise_electrostatic_acceleration!(dv,
 
             (rij, rij_2, success) = apply_boundary_conditions!(ri, rj, pbc, p.R2)
             if success
-                force += qs[j] * (ri - rj) / norm(ri - rj)^3
+                force += qs[j] * rij / norm(rij)^3
             end
         end
     end    
