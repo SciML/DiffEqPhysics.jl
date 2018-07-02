@@ -87,7 +87,7 @@ function get_masses(system::WaterSPCFw)
 end
 
 function temperature(result::SimulationResult, time::Real)
-    kb = 1.38e-23
+    kb = result.simulation.kb
     velocities = get_velocity(result, time)
     masses = get_masses(result.simulation.system)
     temperature = mean(sum(velocities.^2, 1) .* masses) / (3kb)
@@ -95,7 +95,7 @@ function temperature(result::SimulationResult, time::Real)
 end
 
 function temperature(result::SimulationResult{<:WaterSPCFw}, time::Real)
-    kb = 1.38e-23
+    kb = result.simulation.kb
     system = result.simulation.system
     n = length(system.bodies)
     vs = get_velocity(result, time)
@@ -103,8 +103,8 @@ function temperature(result::SimulationResult{<:WaterSPCFw}, time::Real)
     v2 = zeros(n)
     for i = 1:n
         indO, indH1, indH2 = 3 * (i - 1) + 1, 3 * (i - 1) + 2, 3 * (i - 1) + 3
-        v_c = (vs[:,indO] * system.mO + vs[:,indH1] * system.mH + vs[:,indH2] * system.mH) / mH2O
-        v2 = dot(v_c, v_c)
+        v_c = @. (vs[:,indO] * system.mO + vs[:,indH1] * system.mH + vs[:,indH2] * system.mH) / mH2O
+        v2[i] = dot(v_c, v_c)
     end
     temperature = mean(v2) * mH2O / (3kb)
     return temperature
@@ -304,7 +304,7 @@ function get_andersen_thermostating_callback(s::NBodySimulation)
     affect! = function (integrator)
         for i = 1:n
             if randn() < p.ν * (integrator.t - integrator.tprev)
-                integrator.u.x[1][:,i] .= v_dev * randn(3)
+                @. integrator.u.x[1][:,i] = v_dev * randn()
             end
         end
     end
@@ -358,7 +358,7 @@ function distancies(result::SimulationResult, time::Real)
     for i = 1:n
         for j = 1:n
             if i != j
-                push!(d, norm(vec(cc[:,i] - cc[:,j])))
+                push!(d, norm(cc[:,i] - cc[:,j]))
             end
         end
     end

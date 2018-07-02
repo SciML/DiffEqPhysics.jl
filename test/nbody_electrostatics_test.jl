@@ -65,3 +65,42 @@ let
     @test sprint(io -> show(io, potential1)) == "Electrostatic:\n\tk:9.0e9\n"
     @test sprint(io -> show(io, potential2)) == "Electrostatic:\n\tk:1.0\n"
 end
+
+let 
+    # energy conservation test
+    n = 8
+    bodies = ChargedParticle[]
+    L=1.0
+    m=1.0
+    q=1.0
+    count = 1
+    dL = L / (ceil(n^(1 / 3))+1)
+    for x = dL/2:dL:L, y = dL/2:dL:L, z = dL/2:dL:L  
+        if count > n
+            break
+        end
+        r = SVector(x, y, z)
+        v = SVector(.0,.0,.0)
+        body = ChargedParticle(r, v, m, q)
+        push!(bodies, body)
+        count += 1           
+    end
+
+    k = 9e9
+    τ = 0.01*dL/ sqrt(2*k*q*q/(dL*m))
+    t1=0.0
+    t2=1000*τ
+    #system = ChargedParticles(bodies, k)
+    potential = ElectrostaticParameters(k, 0.45*L)
+    system = PotentialNBodySystem(bodies, Dict(:electrostatic=>potential))
+    pbc = CubicPeriodicBoundaryConditions(L)
+    simulation = NBodySimulation(system, (t1,t2), pbc)
+    result = run_simulation(simulation, VelocityVerlet(), dt=τ)
+
+    e_tot_1 = total_energy(result, t1)
+    e_tot_2 = total_energy(result, t2)
+
+
+    ε = 0.001
+    @test (e_tot_2-e_tot_1)/e_tot_1 ≈ 0.0 atol = ε 
+end

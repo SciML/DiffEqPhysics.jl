@@ -106,7 +106,7 @@ function pairwise_lennard_jones_acceleration!(dv,
             end        
         end
     end   
-    dv .+=  24 * p.ϵ * force / ms[i]
+    @. dv +=  24 * p.ϵ * force / ms[i]
 end
 
 function pairwise_electrostatic_acceleration!(dv,
@@ -132,7 +132,7 @@ function pairwise_electrostatic_acceleration!(dv,
         end
     end    
 
-    dv .+= p.k * qs[i] * force / ms[i]
+    @. dv += p.k * qs[i] * force / ms[i]
 end
 
 
@@ -153,7 +153,7 @@ function gravitational_acceleration!(dv,
         end
     end
     
-    dv .+= accel
+    @. dv += accel
 end
 
 function magnetostatic_dipdip_acceleration!(dv, 
@@ -179,7 +179,7 @@ function magnetostatic_dipdip_acceleration!(dv,
         end
     end
     
-    dv .+= 3 * p.μ_4π * force / bodies[i].m
+    @. dv += 3 * p.μ_4π * force / bodies[i].m
 end
 
 function harmonic_bond_potential_acceleration!(dv, 
@@ -199,7 +199,7 @@ function harmonic_bond_potential_acceleration!(dv,
         force -= d * k * rij / r
     end
     
-    dv .+= force / ms[i]
+    @. dv += force / ms[i]
 end
 
 function valence_angle_potential_acceleration!(dv,
@@ -235,7 +235,7 @@ function valence_angle_potential_acceleration!(dv,
     force_c = pc * force / norm(rbc)
     force_b = -(force_a + force_c)
 
-    dv[:,a] .+= force_a / ms[a]
-    dv[:,b] .+= force_b / ms[b]
-    dv[:,c] .+= force_c / ms[c]
+    @. dv[:,a] += force_a / ms[a]
+    @. dv[:,b] += force_b / ms[b]
+    @. dv[:,c] += force_c / ms[c]
 end

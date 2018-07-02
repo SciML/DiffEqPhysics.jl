@@ -6,6 +6,7 @@ include("./nbody_thermostat.jl")
 include("./nbody_basic_potentials.jl")
 include("./nbody_system.jl")
 
+const kb_SI = 1.38e-23 # J/K
 
 # This structure defines conditions under wich we test our system of n-bodies
 # With this wrapping we can make such fields as `boundary_conditions` necessary for every simulation
@@ -15,6 +16,7 @@ struct NBodySimulation{sType <: NBodySystem,bcType <: BoundaryConditions,tType <
     tspan::Tuple{tType,tType}
     boundary_conditions::bcType
     thermostat::thermType
+    kb::tType
     external_electric_field
     external_magnetic_field
     external_gravitational_field
@@ -24,24 +26,33 @@ function NBodySimulation(system::BasicPotentialSystem,
     tspan::Tuple{tType,tType},
     boundary_conditions::BoundaryConditions,
     thermostat::Thermostat,
+    kb::tType,
     external_electric_field,
     external_magnetic_field,
     external_gravitational_field) where {tType <: Real}
     
     potential_system = PotentialNBodySystem(system)
-    NBodySimulation(potential_system, tspan, boundary_conditions, thermostat, external_electric_field, external_magnetic_field, external_gravitational_field)
+    NBodySimulation(potential_system, tspan, boundary_conditions, thermostat, kb, external_electric_field, external_magnetic_field, external_gravitational_field)
+end
+
+function NBodySimulation(system::NBodySystem, tspan::Tuple{tType,tType}, boundary_conditions::BoundaryConditions, kb::tType) where {tType <: Real}
+    NBodySimulation(system, tspan, boundary_conditions, NullThermostat(), kb, x -> 0, x -> 0, x -> 0)
+end
+
+function NBodySimulation(system::NBodySystem, tspan::Tuple{tType,tType}, boundary_conditions::BoundaryConditions, thermostat::Thermostat, kb::tType) where {tType <: Real}
+    NBodySimulation(system, tspan, boundary_conditions, thermostat, kb, x -> 0, x -> 0, x -> 0)
 end
 
 function NBodySimulation(system::NBodySystem, tspan::Tuple{tType,tType}, boundary_conditions::BoundaryConditions, thermostat::Thermostat) where {tType <: Real}
-    NBodySimulation(system, tspan, boundary_conditions, thermostat, x -> 0, x -> 0, x -> 0)
+    NBodySimulation(system, tspan, boundary_conditions, thermostat, kb_SI, x -> 0, x -> 0, x -> 0)
 end
 
 function NBodySimulation(system::NBodySystem, tspan::Tuple{tType,tType}, boundary_conditions::BoundaryConditions) where {tType <: Real}
-    NBodySimulation(system, tspan, boundary_conditions, NullThermostat(), x -> 0, x -> 0, x -> 0)
+    NBodySimulation(system, tspan, boundary_conditions, NullThermostat(), kb_SI, x -> 0, x -> 0, x -> 0)
 end
 
 function NBodySimulation(system::NBodySystem, tspan::Tuple{tType,tType}) where {tType <: Real}
-    NBodySimulation(system, tspan, InfiniteBox(), NullThermostat(), x -> 0, x -> 0, x -> 0)
+    NBodySimulation(system, tspan, InfiniteBox(), NullThermostat(), kb_SI, x -> 0, x -> 0, x -> 0)
 end
 
 function Base.show(stream::IO, s::NBodySimulation)

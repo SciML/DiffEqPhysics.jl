@@ -22,13 +22,3 @@ struct MagneticParticle{cType <: Real,mType <: Real,mmType <: Real} <: Body
     @position_velocity_mass
     mm::SVector{3,mmType}   
 end
-
-struct WaterMoleculeSPCE{cType <: Real,mType <: Real, qType<:Real, ljType<:Real, aType<:Real}
-    @position_velocity_mass
-    qH::qType
-    qO::qType
-    rOH::cType
-    σ::ljType
-    ϵ::ljType
-    ∠HOH::aType
-end

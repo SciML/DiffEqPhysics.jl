@@ -67,7 +67,7 @@ let
 
     parameters = LennardJonesParameters(ϵ, σ, R)
     lj_system = PotentialNBodySystem([p1, p2, p3], Dict(:lennard_jones => parameters));
-    simulation = NBodySimulation(lj_system, (t1, t2), PeriodicBoundaryConditions(L));
+    simulation = NBodySimulation(lj_system, (t1, t2), PeriodicBoundaryConditions(L), kb);
     result = run_simulation(simulation, VelocityVerlet(), dt=τ)
     
 
