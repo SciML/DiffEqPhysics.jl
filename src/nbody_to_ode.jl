@@ -194,6 +194,28 @@ function obtain_data_for_valence_angle_harmonic_interaction(system::WaterSPCFw)
     return (ms, bonds)
 end
 
+function gather_simultaneous_acceleration(s::NBodySimulation)
+    acelerations = []
+    if s.thermostat isa BerendsenThermostat
+        push!(acelerations, get_berendsen_thermostating_acceleration(s))
+    end
+    acelerations
+end
+
+function get_berendsen_thermostating_acceleration(simulation::NBodySimulation)
+    (ms, kb, n, nc, p) = obtain_data_for_berendsen_thermostating(simulation)
+    (dv, u, v, t) -> berendsen_acceleration!(dv, v, ms, kb, n, nc, p)
+end
+
+function obtain_data_for_berendsen_thermostating(simulation::NBodySimulation)
+    ms = get_masses(simulation.system)
+    kb = simulation.kb
+    n = length(simulation.system.bodies)
+    nc = 0
+    p = simulation.thermostat
+    (ms, kb, n, nc, p)
+end
+
 function DiffEqBase.ODEProblem(simulation::NBodySimulation{<:PotentialNBodySystem})
     (u0, v0, n) = gather_bodies_initial_coordinates(simulation.system)
     
@@ -219,6 +241,7 @@ function DiffEqBase.SecondOrderODEProblem(simulation::NBodySimulation{<:Potentia
     (u0, v0, n) = gather_bodies_initial_coordinates(simulation.system)
 
     acceleration_functions = gather_accelerations_for_potentials(simulation)  
+    simultaneous_acceleration = gather_simultaneous_acceleration(simulation)
 
     function soode_system!(dv, v, u, p, t)
         @inbounds for i = 1:n
@@ -228,6 +251,9 @@ function DiffEqBase.SecondOrderODEProblem(simulation::NBodySimulation{<:Potentia
             end
             dv[:, i] .= a
         end 
+        for acceleration! in simultaneous_acceleration
+            acceleration!(dv, u, v, t);    
+        end
     end
 
     SecondOrderODEProblem(soode_system!, v0, u0, simulation.tspan)

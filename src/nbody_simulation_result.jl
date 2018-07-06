@@ -504,3 +504,50 @@ function msd(sr::SimulationResult{<:WaterSPCFw})
 
     (ts, dr2)
 end
+
+# coordinates should be in angstroms
+function save_to_pdb(sr::SimulationResult{<:WaterSPCFw}, path )
+    f = open(path,"w+")
+    L = 10*sr.simulation.boundary_conditions.L
+    strL = @sprintf("%9.3f",L)
+    strA = @sprintf("%7.2f",90)
+    #println(f,"CRYST1",lpad(strL,9),lpad(strL,9),lpad(strL,9),lpad(strA,7),lpad(strA,7),lpad(strA,7))
+    n = length(sr.simulation.system.bodies)
+    count = 0
+    for t in sr.solution.t
+        cc = 10*get_position(sr, t)
+        map!(x ->  x -= L * floor(x / L), cc, cc)
+        count+=1      
+        println(f,rpad("MODEL",10), count)
+        println(f,"REMARK 250 time=$t picoseconds")
+        for i ∈ 1:n
+            indO, indH1, indH2 = 3 * (i - 1) + 1, 3 * (i - 1) + 2, 3 * (i - 1) + 3
+            
+            println(f,"HETATM",lpad(indO,5),"  ",rpad("O",4),"HOH",lpad(i,6),"    ", lpad(@sprintf("%8.3f",cc[1,indO]),8), lpad(@sprintf("%8.3f",cc[2,indO]),8), lpad(@sprintf("%8.3f",cc[3,indO]),8),lpad("1.00",6),lpad("0.00",6), lpad("",10), lpad("O",2))
+            println(f,"HETATM",lpad(indH1,5),"  ",rpad("H1",4),"HOH",lpad(i,6),"    ", lpad(@sprintf("%8.3f",cc[1,indH1]),8), lpad(@sprintf("%8.3f",cc[2,indH1]),8), lpad(@sprintf("%8.3f",cc[3,indH1]),8),lpad("1.00",6),lpad("0.00",6), lpad("",10), lpad("H",2))
+            println(f,"HETATM",lpad(indH2,5),"  ",rpad("H2",4),"HOH",lpad(i,6),"    ", lpad(@sprintf("%8.3f",cc[1,indH2]),8), lpad(@sprintf("%8.3f",cc[2,indH2]),8), lpad(@sprintf("%8.3f",cc[3,indH2]),8),lpad("1.00",6),lpad("0.00",6), lpad("",10), lpad("H",2))
+            end
+        println(f,"ENDMDL")
+    end
+    close(f)
+end
+
+function save_to_pdb(sr::SimulationResult, path )
+    f = open(path,"w+")
+    n = length(sr.simulation.system.bodies)
+    L = 10*sr.simulation.boundary_conditions.L
+    count = 0
+    for t in sr.solution.t
+        cc = 10*get_position(sr, t)
+        map!(x ->  x -= L * floor(x / L), cc, cc)
+        count+=1      
+        println(f,rpad("MODEL",10), count)
+        println(f,"REMARK 250 time=$t steps")
+        for i ∈ 1:n
+            
+            println(f,"HETATM",lpad(i,5),"  ",rpad("Ar",4),"Ar",lpad(i,6),"    ", lpad(@sprintf("%8.3f",cc[1,i]),8), lpad(@sprintf("%8.3f",cc[2,i]),8), lpad(@sprintf("%8.3f",cc[3,i]),8),lpad("1.00",6),lpad("0.00",6), lpad("",10), lpad("Ar",2))
+        end
+        println(f,"ENDMDL")
+    end
+    close(f)
+end

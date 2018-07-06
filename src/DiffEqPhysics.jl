@@ -19,8 +19,9 @@ export PotentialParameters, LennardJonesParameters, GravitationalParameters,
        ElectrostaticParameters, MagnetostaticParameters, SPCFwParameters
 export PotentialNBodySystem, ChargedParticles, GravitationalSystem, WaterSPCFw
 export PeriodicBoundaryConditions, CubicPeriodicBoundaryConditions, InfiniteBox
-export AndersenThermostat
+export AndersenThermostat, BerendsenThermostat
 export run_simulation, get_position, get_velocity, get_masses, temperature,
-       initial_energy, kinetic_energy, potential_energy, total_energy, rdf, msd
+       initial_energy, kinetic_energy, potential_energy, total_energy, rdf, msd,
+       generate_bodies_in_cell_nodes
 
 end # module

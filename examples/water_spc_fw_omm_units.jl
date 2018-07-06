@@ -1,27 +1,5 @@
 using DiffEqPhysics
 
-function generate_bodies_in_cell_nodes(n::Int, m::Real, v_dev::Real, L::Real)
-   
-    rng = MersenneTwister(n);
-    velocities = v_dev * randn(rng, Float64, (3, n))
-    bodies = MassBody[]
-
-    count = 1
-    dL = L / (ceil(n^(1 / 3)))
-    for x = dL/2:dL:L, y = dL/2:dL:L, z = dL/2:dL:L  
-    #for x = 1.5*dL:2dL:5.6*dL, y = 1.5*dL:2dL:5.6*dL, z = 1.5*dL:2dL:5.6*dL        
-        if count > n
-            break
-        end
-        r = SVector(x, y, z)
-        v = SVector{3}(velocities[:,count])
-        body = MassBody(r, v, m)
-        push!(bodies, body)
-        count += 1           
-    end
-    return bodies
-end
-
 const Na = 6.022e23
 const T = 298.16 # °K
 const kb = 8.3144598e-3 # kJ/(K*mol)
@@ -32,7 +10,7 @@ const mO = 15.999 # Da
 const mH = 1.00794 # Da
 const mH2O = mO+2*mH
 const N = 216#floor(Int, ρ * L^3 / m)
-const L = (mH2O*N/ρ)^(1/3)#10.229σ
+const L = (mH2O*N/ρ)^(1/3)
 const R = 0.9 # ~3*σOO  
 const Rel = 0.49*L
 const v_dev = sqrt(3*kb * T /mH2O)
@@ -67,6 +45,8 @@ timesteps = round(length(result.solution.t))
 using JLD
 #save("D:/water $Nactual molecules $timesteps steps $time_now.jld", "rs", rs, "grf", grf, "ts", ts, "dr2", dr2)
 #save("D:/water $Nactual molecules $timesteps steps $time_now.jld", "rs", rs, "grf", grf, "ts", ts, "dr2", dr2, "e_tot", e_tot, "e_kin", e_kin, "e_pot", e_pot)
+#save("D:/!_good_water $Nactual molecules $timesteps steps $time_now.jld", "rs", rs, "grf", grf, "ts", ts, "dr2", dr2, "τ", τ, "t1", t1, "t2", t2, "N", N, "L", L)
+#@time save_to_pdb(result, "D:/water simulation $Nactual molecules and $timesteps steps $time_now.pdb" )
 
 using Plots
 import GR
