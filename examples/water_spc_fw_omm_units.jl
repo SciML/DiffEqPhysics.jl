@@ -1,4 +1,4 @@
-include("../src/nbody_simulation.jl")
+using DiffEqPhysics
 
 function generate_bodies_in_cell_nodes(n::Int, m::Real, v_dev::Real, L::Real)
    
