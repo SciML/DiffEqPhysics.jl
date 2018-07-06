@@ -33,10 +33,10 @@ let
     "Potentials: \nLennard-Jones:\n\tϵ:1.0\n\tσ:1.0\n\tR:Inf\n"
 
     @test sprint(io -> show(io, simulation)) == 
-    "Timespan: (0.0, 1.0)\nBoundary conditions: InfiniteBox{Float64}([-Inf, Inf, -Inf, Inf, -Inf, Inf])\nPotentials: \nLennard-Jones:\n\tϵ:1.0\n\tσ:1.0\n\tR:Inf\n"
+    "Timespan: (0.0, 1.0)\nBoundary conditions: DiffEqPhysics.InfiniteBox{Float64}([-Inf, Inf, -Inf, Inf, -Inf, Inf])\nPotentials: \nLennard-Jones:\n\tϵ:1.0\n\tσ:1.0\n\tR:Inf\n"
 
     @test sprint(io -> show(io, sim_result)) == 
-    "N: 2\nTimespan: (0.0, 1.0)\nBoundary conditions: InfiniteBox{Float64}([-Inf, Inf, -Inf, Inf, -Inf, Inf])\nPotentials: \nLennard-Jones:\n\tϵ:1.0\n\tσ:1.0\n\tR:Inf\nTime steps: 1001\nt: 0.0, 1.0\n"
+    "N: 2\nTimespan: (0.0, 1.0)\nBoundary conditions: DiffEqPhysics.InfiniteBox{Float64}([-Inf, Inf, -Inf, Inf, -Inf, Inf])\nPotentials: \nLennard-Jones:\n\tϵ:1.0\n\tσ:1.0\n\tR:Inf\nTime steps: 1001\nt: 0.0, 1.0\n"
 end
 
 # test three particles of liquid argon and their "temperature"
@@ -67,7 +67,7 @@ let
 
     parameters = LennardJonesParameters(ϵ, σ, R)
     lj_system = PotentialNBodySystem([p1, p2, p3], Dict(:lennard_jones => parameters));
-    simulation = NBodySimulation(lj_system, (t1, t2), PeriodicBoundaryConditions(L));
+    simulation = NBodySimulation(lj_system, (t1, t2), PeriodicBoundaryConditions(L), kb);
     result = run_simulation(simulation, VelocityVerlet(), dt=τ)
     
 
@@ -83,13 +83,20 @@ let
     e_tot_2 = total_energy(result, t2)
     @test e_tot_1 ≈ e_tot_2 atol = ε
 
-    
-    for coordinates in result
-        @test length(coordinates) == 3
-        for i=1:3
-            @test length(coordinates[1]) == 3
-        end
-    end
+    simulation = NBodySimulation(lj_system, (t1, t2), CubicPeriodicBoundaryConditions(L));
+    result = run_simulation(simulation, VelocityVerlet(), dt=τ)
+    e_tot_1 = total_energy(result, t1)
+    ε = 0.1*e_tot_1
+    e_tot_2 = total_energy(result, t2)
+    @test e_tot_1 ≈ e_tot_2 atol = ε
+
+    (ts, mean_square_displacement) = msd(result)
+    @test mean_square_displacement[1]<mean_square_displacement[end]
+
+    (rs, grs) = rdf(result)
+    (val, ind) = findmax(grs)
+    @test (rs[ind]/σ) ≈ 1.0 atol = 1.0
+
 end
 
 let default_potential = LennardJonesParameters()
