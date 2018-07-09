@@ -13,10 +13,10 @@ const N = 216#floor(Int, ρ * L^3 / m)
 const L = (mH2O*N/ρ)^(1/3)
 const R = 0.9 # ~3*σOO  
 const Rel = 0.49*L
-const v_dev = sqrt(3*kb * T /mH2O)
+const v_dev = sqrt(kb * T /mH2O)
 const τ = 0.5e-3 # ps
 const t1 = 0τ
-const t2 = 3000τ # ps
+const t2 = 300τ # ps
 const k_bond = 1059.162*4.184*1e2 # kJ/(mol*nm^2)
 const k_angle = 75.90*4.184 # kJ/(mol*rad^2)
 const rOH = 0.1012 # nm
@@ -30,7 +30,8 @@ e_parameters = ElectrostaticParameters(k, Rel)
 spc_paramters = SPCFwParameters(rOH, ∠HOH, k_bond, k_angle)
 pbc = CubicPeriodicBoundaryConditions(L)
 water = WaterSPCFw(bodies, mH, mO, qH, qO,  jl_parameters, e_parameters, spc_paramters);
-simulation = NBodySimulation(water, (t1, t2), pbc, kb);
+thermostat = NoseHooverThermostat(200, 0.7)
+simulation = NBodySimulation(water, (t1, t2), pbc, thermostat, kb);
 #result = run_simulation(simulation, Tsit5())
 result = @time run_simulation(simulation, VelocityVerlet(), dt=τ)
 

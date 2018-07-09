@@ -1,8 +1,14 @@
-function gather_bodies_initial_coordinates(system::NBodySystem)
+function gather_bodies_initial_coordinates(simulation::NBodySimulation)
+    system = simulation.system
     bodies = system.bodies;
-    n = length(bodies)
-    u0 = zeros(3, n)
-    v0 = zeros(3, n)
+    len = n = length(bodies)
+    
+    if simulation.thermostat isa NoseHooverThermostat
+        len +=1
+    end
+
+    u0 = zeros(3, len)
+    v0 = zeros(3, len)
 
     for i = 1:n
         u0[:, i] = bodies[i].r 
@@ -12,7 +18,8 @@ function gather_bodies_initial_coordinates(system::NBodySystem)
     (u0, v0, n)
 end
 
-function gather_bodies_initial_coordinates(system::WaterSPCFw)
+function gather_bodies_initial_coordinates(simulation::NBodySimulation{<:WaterSPCFw})
+    system = simulation.system
     molecules = system.bodies;
     n = length(molecules)
     u0 = zeros(3, 3 * n)
@@ -198,6 +205,8 @@ function gather_simultaneous_acceleration(s::NBodySimulation)
     acelerations = []
     if s.thermostat isa BerendsenThermostat
         push!(acelerations, get_berendsen_thermostating_acceleration(s))
+    elseif s.thermostat isa NoseHooverThermostat
+        push!(acelerations, get_nosehoover_thermostating_acceleration(s))
     end
     acelerations
 end
@@ -214,6 +223,21 @@ function obtain_data_for_berendsen_thermostating(simulation::NBodySimulation)
     nc = 0
     p = simulation.thermostat
     (ms, kb, n, nc, p)
+end
+
+function get_nosehoover_thermostating_acceleration(simulation::NBodySimulation)
+    (ms, kb, n, nc, γind, p) = obtain_data_for_nosehoover_thermostating(simulation)
+    (dv, u, v, t) -> nosehoover_acceleration!(dv, u, v, ms, kb, n, nc, γind, p)
+end
+
+function obtain_data_for_nosehoover_thermostating(simulation::NBodySimulation)
+    ms = get_masses(simulation.system)
+    kb = simulation.kb
+    n = length(simulation.system.bodies)
+    γind = 3*n+1
+    nc = 0
+    p = simulation.thermostat
+    (ms, kb, n, nc, γind, p)
 end
 
 function DiffEqBase.ODEProblem(simulation::NBodySimulation{<:PotentialNBodySystem})
@@ -238,7 +262,7 @@ end
 
 function DiffEqBase.SecondOrderODEProblem(simulation::NBodySimulation{<:PotentialNBodySystem})
     
-    (u0, v0, n) = gather_bodies_initial_coordinates(simulation.system)
+    (u0, v0, n) = gather_bodies_initial_coordinates(simulation)
 
     acceleration_functions = gather_accelerations_for_potentials(simulation)  
     simultaneous_acceleration = gather_simultaneous_acceleration(simulation)
@@ -261,7 +285,7 @@ end
 
 function DiffEqBase.SecondOrderODEProblem(simulation::NBodySimulation{<:WaterSPCFw})
     
-    (u0, v0, n) = gather_bodies_initial_coordinates(simulation.system)
+    (u0, v0, n) = gather_bodies_initial_coordinates(simulation)
 
     (o_acelerations, h_acelerations) = gather_accelerations_for_potentials(simulation)
     group_accelerations = gather_group_accelerations(simulation)   

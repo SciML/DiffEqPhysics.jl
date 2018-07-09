@@ -1,4 +1,4 @@
-println("====  Andersen thermostat testing    ====")
+println("====  Thermostat testing    ====")
 
 let 
     T = 120.0 # °K
@@ -42,7 +42,7 @@ let
     T = 120.0 # °K
     kb = 8.3144598e-3 # kJ/(K*mol)
     ϵ = T * kb
-    σ = 0.34e-9 # m
+    σ = 0.34 # nm
     ρ = 1374/1.6747# Da/nm^3
     m = 39.95# Da
     N = 27
@@ -63,6 +63,7 @@ let
     result = run_simulation(simulation, VelocityVerlet(), dt=τ)
      
     T2 = temperature(result, t2)
-    ε = 0.01
+    println(T2)
+    ε = 0.1
     @test abs(T2-T)/T ≈ 0.0 atol = ε
 end

@@ -31,19 +31,19 @@ function Base.next(sr::SimulationResult, state)
 end
 
 function get_velocity(sr::SimulationResult, time::Real, i::Integer=0)
+    n = get_coordinate_vector_count(sr.simulation.system)
+    
     if typeof(sr.solution[1]) <: RecursiveArrayTools.ArrayPartition
         velocities = sr(time).x[1]
-        n = size(velocities, 2)
         if i <= 0
-            return velocities[:, 1:end]
+            return velocities[:, 1:n]
         else
             return velocities[:, i]
         end
     else
         velocities = sr(time)
-        n = div(size(velocities, 2), 2)
         if i <= 0
-            return @view velocities[:, n + 1:end]
+            return @view velocities[:, n + 1:2*n]
         else
             return @view velocities[:, n + i]
         end
@@ -53,11 +53,11 @@ end
 function get_position(sr::SimulationResult, time::Real, i::Integer=0)
     if typeof(sr.solution[1]) <: RecursiveArrayTools.ArrayPartition
         positions = sr(time).x[2]
-        n = size(positions, 2)
     else
         positions = sr(time)
-        n = div(size(positions, 2), 2)
     end
+
+    n = get_coordinate_vector_count(sr.simulation.system)
 
     if i <= 0
         return @view positions[:, 1:n]
@@ -84,6 +84,14 @@ function get_masses(system::WaterSPCFw)
         ms[3 * (i - 1) + 3] = system.mH
     end 
     return ms
+end
+
+function get_coordinate_vector_count(system::NBodySystem)
+    return length(system.bodies)
+end
+
+function get_coordinate_vector_count(system::WaterSPCFw)
+    return 3* length(system.bodies)
 end
 
 function temperature(result::SimulationResult, time::Real)
