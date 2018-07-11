@@ -272,7 +272,7 @@ function total_energy(sr::SimulationResult, time::Real)
 end
 
 function initial_energy(simulation::NBodySimulation)
-    (u0, v0, n) = gather_bodies_initial_coordinates(simulation.system)
+    (u0, v0, n) = gather_bodies_initial_coordinates(simulation)
     ms = get_masses(simulation.system)
     return potential_energy(u0, simulation) + kinetic_energy(v0, ms) 
 end
@@ -291,6 +291,11 @@ function run_simulation(s::NBodySimulation, alg_type::Union{VelocityVerlet,DPRKN
     return SimulationResult(solution, s)
 end
 
+function run_simulation_sde(s::NBodySimulation, args...; kwargs...)
+    solution = solve(SDEProblem(s), args...; kwargs...)
+    return SimulationResult(solution, s)
+end
+
 function obtain_callbacks_for_so_ode_problem(s::NBodySimulation)
     callback_array = Vector{DECallback}()
 
@@ -304,14 +309,15 @@ end
 function get_andersen_thermostating_callback(s::NBodySimulation)
     p = s.thermostat::AndersenThermostat
     n = length(s.system.bodies)
-    v_dev = sqrt(p.kb * p.T / s.system.bodies[1].m)
+    v_dev = sqrt(s.kb * p.T / s.system.bodies[1].m)
 
     condition = function (u, t, integrator)
         true
     end
     affect! = function (integrator)
+        collision_prob = p.ν * (integrator.t - integrator.tprev)
         for i = 1:n
-            if randn() < p.ν * (integrator.t - integrator.tprev)
+            if randn() < collision_prob
                 @. integrator.u.x[1][:,i] = v_dev * randn()
             end
         end

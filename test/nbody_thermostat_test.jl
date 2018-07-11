@@ -27,8 +27,8 @@ let
 
     parameters = LennardJonesParameters(ϵ, σ, R)
     lj_system = PotentialNBodySystem([p1, p2, p3], Dict(:lennard_jones => parameters));
-    thermostat = AndersenThermostat(0.2, T, kb)
-    simulation = NBodySimulation(lj_system, (t1, t2), PeriodicBoundaryConditions(L), thermostat);
+    thermostat = AndersenThermostat(T, 0.2)
+    simulation = NBodySimulation(lj_system, (t1, t2), PeriodicBoundaryConditions(L), thermostat, kb);
     result = run_simulation(simulation, VelocityVerlet(), dt=τ)
     
 

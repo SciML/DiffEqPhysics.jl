@@ -22,8 +22,14 @@ function gather_bodies_initial_coordinates(simulation::NBodySimulation{<:WaterSP
     system = simulation.system
     molecules = system.bodies;
     n = length(molecules)
-    u0 = zeros(3, 3 * n)
-    v0 = zeros(3, 3 * n)
+    len = 3*n
+    
+    if simulation.thermostat isa NoseHooverThermostat
+        len = 3*n+1
+    end
+
+    u0 = zeros(3, len)
+    v0 = zeros(3, len)
 
     for i = 1:n
         p = system.scpfw_parameters
@@ -225,6 +231,15 @@ function obtain_data_for_berendsen_thermostating(simulation::NBodySimulation)
     (ms, kb, n, nc, p)
 end
 
+function obtain_data_for_berendsen_thermostating(simulation::NBodySimulation{<:WaterSPCFw})
+    ms = get_masses(simulation.system)
+    kb = simulation.kb
+    n = 3*length(simulation.system.bodies)
+    nc = 2*length(simulation.system.bodies)
+    p = simulation.thermostat
+    (ms, kb, n, nc, p)
+end
+
 function get_nosehoover_thermostating_acceleration(simulation::NBodySimulation)
     (ms, kb, n, nc, γind, p) = obtain_data_for_nosehoover_thermostating(simulation)
     (dv, u, v, t) -> nosehoover_acceleration!(dv, u, v, ms, kb, n, nc, γind, p)
@@ -240,8 +255,18 @@ function obtain_data_for_nosehoover_thermostating(simulation::NBodySimulation)
     (ms, kb, n, nc, γind, p)
 end
 
+function obtain_data_for_nosehoover_thermostating(simulation::NBodySimulation{<:WaterSPCFw})
+    ms = get_masses(simulation.system)
+    kb = simulation.kb
+    n = 3*length(simulation.system.bodies)
+    γind = 3*n+1
+    nc = 2*length(simulation.system.bodies)
+    p = simulation.thermostat
+    (ms, kb, n, nc, γind, p)
+end
+
 function DiffEqBase.ODEProblem(simulation::NBodySimulation{<:PotentialNBodySystem})
-    (u0, v0, n) = gather_bodies_initial_coordinates(simulation.system)
+    (u0, v0, n) = gather_bodies_initial_coordinates(simulation)
     
     acceleration_functions = gather_accelerations_for_potentials(simulation)   
 
@@ -289,6 +314,7 @@ function DiffEqBase.SecondOrderODEProblem(simulation::NBodySimulation{<:WaterSPC
 
     (o_acelerations, h_acelerations) = gather_accelerations_for_potentials(simulation)
     group_accelerations = gather_group_accelerations(simulation)   
+    simultaneous_acceleration = gather_simultaneous_acceleration(simulation)
 
     function soode_system!(dv, v, u, p, t)
         @inbounds for i = 1:n
@@ -310,6 +336,9 @@ function DiffEqBase.SecondOrderODEProblem(simulation::NBodySimulation{<:WaterSPC
                 acceleration!(dv, u, v, t, i);    
             end
         end
+        for acceleration! in simultaneous_acceleration
+            acceleration!(dv, u, v, t);    
+        end
     end
 
     SecondOrderODEProblem(soode_system!, v0, u0, simulation.tspan)
@@ -327,4 +356,34 @@ function gather_accelerations_for_potentials(simulation::NBodySimulation{<:Water
     push!(h_acelerations, get_accelerating_function(simulation.system.scpfw_parameters, simulation))
 
     (o_acelerations, h_acelerations)
+end
+
+function DiffEqBase.SDEProblem(simulation::NBodySimulation{<:PotentialNBodySystem})
+    (u0, v0, n) = gather_bodies_initial_coordinates(simulation)
+    
+    acceleration_functions = gather_accelerations_for_potentials(simulation)   
+
+    therm = simulation.thermostat
+    m = simulation.system.bodies[1].m
+
+    function f!(du, u, p, t)
+        du[:, 1:n] = @view u[:, n + 1:2n];
+
+        @inbounds for i = 1:n
+            a = MVector(0.0, 0.0, 0.0)
+            for acceleration! in acceleration_functions
+                acceleration!(a, u[:, 1:n], u[:, n + 1:end], t, i);                
+            end
+            du[:, n + i] .= a
+        end
+        
+        @. du[:, n + 1:end] -= therm.γ*u[:, n + 1:end]/m
+    end
+
+    function g!(du, u, p, t)
+        du[:, n + 1:end] += sqrt(2*therm.γ*simulation.kb*therm.T)/m
+    end
+    
+    return SDEProblem(f!, g!, hcat(u0, v0), simulation.tspan)
+
 end
