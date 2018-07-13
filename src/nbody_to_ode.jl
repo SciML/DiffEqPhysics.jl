@@ -177,9 +177,9 @@ function obtain_data_for_electrostatic_interaction(system::WaterSPCFw)
         ms[Oind] = system.mO
         ms[Oind + 1] = system.mH
         ms[Oind + 2] = system.mH
-        exclude[Oind] = [Oind, Oind+1, Oind+2]
-        exclude[Oind+1] = [Oind, Oind+1, Oind+2]
-        exclude[Oind+2] = [Oind, Oind+1, Oind+2]
+        exclude[Oind] = [Oind, Oind+1, Oind+2,3*n+1]
+        exclude[Oind+1] = [Oind, Oind+1, Oind+2,3*n+1]
+        exclude[Oind+2] = [Oind, Oind+1, Oind+2,3*n+1]
     end 
     return (qs, ms, indxs, exclude)
 end
@@ -366,7 +366,7 @@ function DiffEqBase.SDEProblem(simulation::NBodySimulation{<:PotentialNBodySyste
     therm = simulation.thermostat
     m = simulation.system.bodies[1].m
 
-    function f!(du, u, p, t)
+    function acceleration!(du, u, p, t)
         du[:, 1:n] = @view u[:, n + 1:2n];
 
         @inbounds for i = 1:n
@@ -376,14 +376,12 @@ function DiffEqBase.SDEProblem(simulation::NBodySimulation{<:PotentialNBodySyste
             end
             du[:, n + i] .= a
         end
-        
-        @. du[:, n + 1:end] -= therm.γ*u[:, n + 1:end]/m
+        @. du[:, n + 1:end] -= therm.γ*u[:, n + 1:end]
     end
 
-    function g!(du, u, p, t)
-        du[:, n + 1:end] += sqrt(2*therm.γ*simulation.kb*therm.T)/m
+    function noise!(du, u, p, t)
+        @. du[:, n + 1:end] += sqrt(2*therm.γ*simulation.kb*therm.T/m)
     end
     
-    return SDEProblem(f!, g!, hcat(u0, v0), simulation.tspan)
-
+    return SDEProblem(acceleration!, noise!, hcat(u0, v0), simulation.tspan)
 end

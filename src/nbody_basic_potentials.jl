@@ -131,7 +131,6 @@ function pairwise_electrostatic_acceleration!(dv,
             end
         end
     end    
-
     @. dv += p.k * qs[i] * force / ms[i]
 end
 

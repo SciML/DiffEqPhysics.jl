@@ -5,7 +5,7 @@ struct NullThermostat <: Thermostat
 end
 
 
-struct AndersenThermostat{νType <: Real,tType <: Real} <: Thermostat
+struct AndersenThermostat{tType <: Real, νType <: Real} <: Thermostat
     T::tType
     ν::νType
 end
@@ -33,18 +33,21 @@ function md_temperature(vs, ms, kb, N, Nc)
     return temperature
 end
 
-struct NoseHooverThermostat{qType <: Real,tType <: Real} <: Thermostat
+struct NoseHooverThermostat{tType <: Real,τType <: Real} <: Thermostat
     T::tType
-    Q::qType
+    τ::τType
 end
 
 function nosehoover_acceleration!(dv, u, v, ms, kb, N, Nc, ζind, p::NoseHooverThermostat)
     @. dv -= u[ζind] * v
     dv[:,end] = 0
-    v[ζind] = inv(p.Q) * ( sum(dot(ms, vec(sum(v[:,1:N].^2, 1)))) - (3 * N - Nc) * kb * p.T)
+    T = md_temperature(v[:, 1:N], ms, kb, N, Nc)
+    ndf = 3 * N - Nc 
+    v[ζind] = inv(p.τ)^2 * (T/p.T - (ndf+1)/ndf)
+    #v[ζind] = inv(p.Q) * ( sum(dot(ms, vec(sum(v[:,1:N].^2, 1)))) - (3 * N - Nc) * kb * p.T)
 end
 
-struct LangevinThermostat{gType <: Real,tType <: Real} <: Thermostat
+struct LangevinThermostat{tType <: Real, gType <: Real} <: Thermostat
     T::tType
     γ::gType
 end

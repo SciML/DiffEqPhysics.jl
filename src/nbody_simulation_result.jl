@@ -94,28 +94,29 @@ function get_coordinate_vector_count(system::WaterSPCFw)
     return 3* length(system.bodies)
 end
 
-function temperature(result::SimulationResult, time::Real)
-    kb = result.simulation.kb
-    velocities = get_velocity(result, time)
-    masses = get_masses(result.simulation.system)
-    temperature = mean(sum(velocities.^2, 1) .* masses) / (3kb)
-    return temperature
+# n - number of particles
+# nc - number of constraints
+# ndf - number of degrees of freedom
+function get_degrees_of_freedom(system::NBodySystem)
+    n = length(system.bodies)
+    nc = 0
+    ndf = n-nc
+    (n, nc, ndf)
 end
 
-function temperature(result::SimulationResult{<:WaterSPCFw}, time::Real)
+function get_degrees_of_freedom(system::WaterSPCFw)
+    n = 3*length(system.bodies)
+    nc = 2*length(system.bodies)
+    ndf = n-nc
+    (n, nc, ndf)
+end
+
+function temperature(result::SimulationResult, time::Real)
     kb = result.simulation.kb
-    system = result.simulation.system
-    n = length(system.bodies)
+    (n, nc, ndf) = get_degrees_of_freedom(result.simulation.system)
     vs = get_velocity(result, time)
-    mH2O = system.mO + 2 * system.mH
-    v2 = zeros(n)
-    for i = 1:n
-        indO, indH1, indH2 = 3 * (i - 1) + 1, 3 * (i - 1) + 2, 3 * (i - 1) + 3
-        v_c = @. (vs[:,indO] * system.mO + vs[:,indH1] * system.mH + vs[:,indH2] * system.mH) / mH2O
-        v2[i] = dot(v_c, v_c)
-    end
-    temperature = mean(v2) * mH2O / (3kb)
-    return temperature
+    ms = get_masses(result.simulation.system)
+    return md_temperature(vs, ms, kb, n, nc)
 end
 
 function kinetic_energy(velocities, masses)
@@ -317,12 +318,23 @@ function get_andersen_thermostating_callback(s::NBodySimulation)
     affect! = function (integrator)
         collision_prob = p.ν * (integrator.t - integrator.tprev)
         for i = 1:n
-            if randn() < collision_prob
-                @. integrator.u.x[1][:,i] = v_dev * randn()
+            if rand() < collision_prob
+                apply_andersen_rescaling_velocity(integrator, i, v_dev, s.system)
             end
         end
     end
     cb = DiscreteCallback(condition, affect!)
+end
+
+function apply_andersen_rescaling_velocity(integrator, i, v_dev, system::PotentialNBodySystem)
+    @. integrator.u.x[1][:,i] = v_dev * randn()
+end
+
+function apply_andersen_rescaling_velocity(integrator, i, v_dev, system::WaterSPCFw)
+    v = 1.5275*v_dev * randn(3)
+    @. integrator.u.x[1][:,i] = v
+    @. integrator.u.x[1][:,i+1] = v
+    @. integrator.u.x[1][:,i+2] = v
 end
 
 @recipe function generate_data_for_scatter(sr::SimulationResult{<:PotentialNBodySystem}, time::Real=0.0)

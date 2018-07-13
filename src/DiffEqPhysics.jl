@@ -23,6 +23,6 @@ export PeriodicBoundaryConditions, CubicPeriodicBoundaryConditions, InfiniteBox
 export AndersenThermostat, BerendsenThermostat, NoseHooverThermostat, LangevinThermostat
 export run_simulation, get_position, get_velocity, get_masses, temperature,
        initial_energy, kinetic_energy, potential_energy, total_energy, rdf, msd,
-       generate_bodies_in_cell_nodes, run_simulation_sde
+       generate_bodies_in_cell_nodes, run_simulation_sde, save_to_pdb
 
 end # module
