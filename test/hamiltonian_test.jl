@@ -1,5 +1,5 @@
 using DiffEqPhysics, ForwardDiff, StaticArrays
-using Base.Test
+using Test
 
 println("====    HamiltonianProblem Test    ====")
 println("====         Scalar case test      ====")
