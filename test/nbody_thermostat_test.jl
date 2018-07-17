@@ -1,5 +1,7 @@
 println("====  Thermostat testing    ====")
 
+using StaticArrays
+
 let 
     T = 120.0 # °K
     kb = 1.38e-23 # J/K
@@ -10,7 +12,7 @@ let
     L = 5σ # 10.229σ
     N = 3 # floor(Int, ρ * L^3 / m)
     R = 2.25σ   
-    v_dev = sqrt(3*kb * T / m)
+    v_dev = sqrt(kb * T / m)
     r1 = SVector(L/3, L/3, 2*L/3)
     r2 = SVector(L/3, 2*L/3, L/3)
     r3 = SVector(2*L/3, L/3, L/3)
@@ -48,7 +50,7 @@ let
     N = 27
     L = (m*N/ρ)^(1/3)#10.229σ
     R = 0.5*L   
-    v_dev = sqrt(3*kb * T / m)
+    v_dev = sqrt(kb * T / m)
     bodies = generate_bodies_in_cell_nodes(N, m, v_dev, L)
 
     τ = 0.5e-3
@@ -65,4 +67,64 @@ let
     T2 = temperature(result, t2)
     ε = 0.1
     @test abs(T2-T)/T ≈ 0.0 atol = ε
+end
+
+let 
+    T = 120.0 # °K
+    T0 = 90
+    kb = 8.3144598e-3 # kJ/(K*mol)
+    ϵ = T * kb
+    σ = 0.34 # nm
+    ρ = 1374/1.6747# Da/nm^3
+    m = 39.95# Da
+    N = 27
+    L = (m*N/ρ)^(1/3)#10.229σ
+    R = 0.5*L   
+    v_dev = sqrt(kb * T / m)
+    bodies = generate_bodies_in_cell_nodes(N, m, v_dev, L)
+
+    τ = 0.5e-3
+    t1 = 0.0
+    t2 = 200τ
+
+    parameters = LennardJonesParameters(ϵ, σ, R)
+    lj_system = PotentialNBodySystem(bodies, Dict(:lennard_jones => parameters));
+    thermostat = NoseHooverThermostat(T0, 20τ)
+    pbc = CubicPeriodicBoundaryConditions(L)
+    simulation = NBodySimulation(lj_system, (t1, t2), pbc, thermostat, kb);
+    result = run_simulation(simulation, VelocityVerlet(), dt=τ)
+     
+    T2 = temperature(result, t2)
+    ε = 0.5
+    @test abs(T2-T0)/T0 ≈ 0.0 atol = ε
+end
+
+let 
+    T = 120.0 # °K
+    T0 = 90
+    kb = 8.3144598e-3 # kJ/(K*mol)
+    ϵ = T * kb
+    σ = 0.34 # nm
+    ρ = 1374/1.6747# Da/nm^3
+    m = 39.95# Da
+    N = 26
+    L = (m*N/ρ)^(1/3)#10.229σ
+    R = 0.5*L   
+    v_dev = sqrt(kb * T / m)
+    bodies = generate_bodies_in_cell_nodes(N, m, v_dev, L)
+
+    τ = 0.5e-3
+    t1 = 0.0
+    t2 = 200τ
+
+    parameters = LennardJonesParameters(ϵ, σ, R)
+    lj_system = PotentialNBodySystem(bodies, Dict(:lennard_jones => parameters));
+    thermostat = LangevinThermostat(T0, 10)
+    pbc = CubicPeriodicBoundaryConditions(L)
+    simulation = NBodySimulation(lj_system, (t1, t2), pbc, thermostat, kb);
+    result = run_simulation(simulation, VelocityVerlet(), dt=τ)
+     
+    T2 = temperature(result, t2)
+    ε = 0.5
+    @test abs(T2-T0)/T0 ≈ 0.0 atol = ε
 end
