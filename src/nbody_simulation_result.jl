@@ -310,7 +310,6 @@ end
 function get_andersen_thermostating_callback(s::NBodySimulation)
     p = s.thermostat::AndersenThermostat
     n = length(s.system.bodies)
-    v_dev = sqrt(s.kb * p.T / s.system.bodies[1].m)
 
     condition = function (u, t, integrator)
         true
@@ -319,19 +318,20 @@ function get_andersen_thermostating_callback(s::NBodySimulation)
         collision_prob = p.ν * (integrator.t - integrator.tprev)
         for i = 1:n
             if rand() < collision_prob
-                apply_andersen_rescaling_velocity(integrator, i, v_dev, s.system)
+                apply_andersen_rescaling_velocity(integrator, i, s.kb, s.system, p)
             end
         end
     end
     cb = DiscreteCallback(condition, affect!)
 end
 
-function apply_andersen_rescaling_velocity(integrator, i, v_dev, system::PotentialNBodySystem)
+function apply_andersen_rescaling_velocity(integrator, i, kb, system::PotentialNBodySystem, p::AndersenThermostat)
+    v_dev = sqrt(kb * p.T / system.bodies[1].m)
     @. integrator.u.x[1][:,i] = v_dev * randn()
 end
 
-function apply_andersen_rescaling_velocity(integrator, i, v_dev, system::WaterSPCFw)
-    v = 1.5275*v_dev * randn(3)
+function apply_andersen_rescaling_velocity(integrator, i, kb, system::WaterSPCFw, p::AndersenThermostat)
+    v = randn(3)*sqrt( kb*p.T/(2*system.mH+system.mO))
     @. integrator.u.x[1][:,i] = v
     @. integrator.u.x[1][:,i+1] = v
     @. integrator.u.x[1][:,i+2] = v

@@ -14,7 +14,7 @@ let
     const L = (mH2O*N/ρ)^(1/3)#10.229σ
     const R = 9e-10 # 3*σOO  
     const Rel = 0.45*L
-    const v_dev = sqrt(3*kb * T /mH2O)
+    const v_dev = sqrt(kb * T /mH2O)
     const τ = 1e-15 # σ/v
     const t1 = 0τ
     const t2 = 10τ 
@@ -63,8 +63,9 @@ let
     e_tot_2 = total_energy.(result, t2)
     #@test (e_tot_1 - e_tot_2)/e_tot_1 ≈ 0.0 atol = ε
 
+    temperature_expected = (dot(v1,v1)+dot(v2,v2)+dot(v3,v3))*(2*mH+mO)/(kb*21)    
     temperature_1 = temperature(result, t1)
-    @test temperature_1 == T 
+    @test temperature_1 == temperature_expected
 
     count_plotting_data = 0
     for plotting_data ∈ result

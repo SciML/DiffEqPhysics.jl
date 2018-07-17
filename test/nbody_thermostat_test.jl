@@ -63,7 +63,6 @@ let
     result = run_simulation(simulation, VelocityVerlet(), dt=τ)
      
     T2 = temperature(result, t2)
-    println(T2)
     ε = 0.1
     @test abs(T2-T)/T ≈ 0.0 atol = ε
 end
