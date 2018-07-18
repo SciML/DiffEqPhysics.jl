@@ -38,5 +38,8 @@ time_now = Dates.format(now(), "yyyy_mm_dd_HH_MM_SS")
 Nactual = length(bodies)
 timesteps = round(length(result.solution.t))
 
-t = t1:τ:result.solution.t[end-1]
-temper = temperature.(result, t)
+ts = t1:τ:result.solution.t[end-1]
+
+for t in ts
+    coordinates = get_position(result, t)
+end
