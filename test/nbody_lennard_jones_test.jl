@@ -97,6 +97,26 @@ let
     (val, ind) = findmax(grs)
     @test (rs[ind]/σ) ≈ 1.0 atol = 1.0
 
+    io = IOBuffer()
+    pdb_data = sprint(io -> DiffEqPhysics.write_pdb_data(io, result))
+    splitted_data = split(pdb_data, '\n')
+
+    hetatm_count = 0
+    timestep_count = 0
+
+    for s in splitted_data
+        if length(s)>=10 && s[1:10] == "REMARK 250"
+            timestep_count+=1
+        elseif length(s)>=6 && s[1:6]=="HETATM"
+            hetatm_count+=1
+        end
+    end
+
+    molecule_number = hetatm_count/timestep_count
+
+    @test length(result.solution.t) == timestep_count
+    @test molecule_number == length(lj_system.bodies)
+
 end
 
 let default_potential = LennardJonesParameters()

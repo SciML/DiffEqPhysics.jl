@@ -532,8 +532,13 @@ function msd(sr::SimulationResult{<:WaterSPCFw})
 end
 
 # coordinates should be in angstroms
-function save_to_pdb(sr::SimulationResult{<:WaterSPCFw}, path )
-    f = open(path,"w+")
+function save(f::File{format"ProteinDataBank"}, sr::SimulationResult)
+    open(f, "w") do s
+        write_pdb_data(s,sr)
+    end
+end
+
+function write_pdb_data(f::IO, sr::SimulationResult{<:WaterSPCFw})
     L = 10*sr.simulation.boundary_conditions.L
     strL = @sprintf("%9.3f",L)
     strA = @sprintf("%7.2f",90)
@@ -555,11 +560,9 @@ function save_to_pdb(sr::SimulationResult{<:WaterSPCFw}, path )
             end
         println(f,"ENDMDL")
     end
-    close(f)
 end
 
-function save_to_pdb(sr::SimulationResult, path )
-    f = open(path,"w+")
+function write_pdb_data(f::IO, sr::SimulationResult)
     n = length(sr.simulation.system.bodies)
     L = 10*sr.simulation.boundary_conditions.L
     count = 0
@@ -575,5 +578,4 @@ function save_to_pdb(sr::SimulationResult, path )
         end
         println(f,"ENDMDL")
     end
-    close(f)
 end

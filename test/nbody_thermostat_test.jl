@@ -122,7 +122,7 @@ let
     thermostat = LangevinThermostat(T0, 10)
     pbc = CubicPeriodicBoundaryConditions(L)
     simulation = NBodySimulation(lj_system, (t1, t2), pbc, thermostat, kb);
-    result = run_simulation(simulation, VelocityVerlet(), dt=τ)
+    result = run_simulation_sde(simulation, EM(),  dt=τ)
      
     T2 = temperature(result, t2)
     ε = 0.5
