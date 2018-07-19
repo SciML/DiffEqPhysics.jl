@@ -1,4 +1,4 @@
-using DiffEqPhysics, Base.Test, StaticArrays, OrdinaryDiffEq 
+using DiffEqPhysics, Test, StaticArrays, OrdinaryDiffEq 
 
 println("====  Gravitational Functional Test  ====")
 println("====  Choreography cycle test case   ====")
