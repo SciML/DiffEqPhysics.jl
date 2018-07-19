@@ -1,19 +1,19 @@
 # SimulationResult sould provide an interface for working with properties of a separate particle
 # and with physical properties of the whole system.
 struct SimulationResult{sType <: NBodySystem}
-    solution::AbstractTimeseriesSolution
+    solution::DiffEqBase.AbstractTimeseriesSolution
     simulation::NBodySimulation{sType}
 end
 
 function Base.show(stream::IO, sr::SimulationResult)
-    print(stream, "N: ") 
+    print(stream, "N: ")
     show(stream, length(sr.simulation.system.bodies))
     println(stream)
     show(stream, sr.simulation)
-    print(stream, "Time steps: ") 
+    print(stream, "Time steps: ")
     show(stream, length(sr.solution.t))
     println(stream)
-    print(stream, "t: ", minimum(sr.solution.t), ", ", maximum(sr.solution.t)) 
+    print(stream, "t: ", minimum(sr.solution.t), ", ", maximum(sr.solution.t))
     println(stream)
 end
 
@@ -26,7 +26,7 @@ Base.start(::SimulationResult) = 1
 
 Base.done(sr::SimulationResult, state) = state > length(sr.solution.t)
 
-function Base.next(sr::SimulationResult, state) 
+function Base.next(sr::SimulationResult, state)
     (sr, sr.solution.t[state]), state + 1
 end
 
@@ -82,7 +82,7 @@ function get_masses(system::WaterSPCFw)
         ms[3 * (i - 1) + 1] = system.mO
         ms[3 * (i - 1) + 2] = system.mH
         ms[3 * (i - 1) + 3] = system.mH
-    end 
+    end
     return ms
 end
 
@@ -166,21 +166,21 @@ function lennard_jones_potential(p::LennardJonesParameters, indxs::Vector{<:Inte
     @inbounds for ind_i = 1:n
         i = indxs[ind_i]
         ri = @SVector [coordinates[1, i], coordinates[2, i], coordinates[3, i]]
-        for ind_j = ind_i + 1:n    
-            j = indxs[ind_j]          
+        for ind_j = ind_i + 1:n
+            j = indxs[ind_j]
             rj = @SVector [coordinates[1, j], coordinates[2, j], coordinates[3, j]]
-            
+
             (rij, rij_2, success) = apply_boundary_conditions!(ri, rj, pbc, p.R2)
-            
+
             if !success
                 rij_2 = p.R2
             end
-            
+
             σ_rij_6 = (p.σ2 / rij_2)^3
             σ_rij_12 = σ_rij_6^2
             e_lj += (σ_rij_12 - σ_rij_6 )
         end
-    end 
+    end
 
     return 4 * p.ϵ * e_lj
 end
@@ -193,8 +193,8 @@ function electrostatic_potential(p::ElectrostaticParameters, indxs::Vector{<:Int
         i = indxs[ind_i]
         ri = @SVector [rs[1, i], rs[2, i], rs[3, i]]
         e_el_i = 0
-        for ind_j = ind_i + 1:n    
-            j = indxs[ind_j] 
+        for ind_j = ind_i + 1:n
+            j = indxs[ind_j]
             if !in(j, exclude[i])
                 rj = @SVector [rs[1, j], rs[2, j], rs[3, j]]
 
@@ -202,10 +202,10 @@ function electrostatic_potential(p::ElectrostaticParameters, indxs::Vector{<:Int
                 if !success
                     rij = p.R
                 end
-                
+
                 e_el_i += qs[j] / norm(rij)
             end
-        end    
+        end
         e_el += e_el_i * qs[i]
     end
 
@@ -218,7 +218,7 @@ function harmonic_bonds_potential(p::SPCFwParameters,
     neighborhoods::Dict{Int,Vector{Tuple{Int,Float64}}})
 
     e_harmonic = 0
-    
+
     @inbounds for (i, neighborhood) ∈ neighborhoods
         ri = @SVector [rs[1, i], rs[2, i], rs[3, i]]
         for (j, k) in neighborhood
@@ -245,7 +245,7 @@ function valence_angle_harmonic_potential(rs,
         rba = ra - rb
         rbc = rc - rb
 
-        currenct_angle = acos(dot(rba, rbc) / (norm(rba) * norm(rbc)))        
+        currenct_angle = acos(dot(rba, rbc) / (norm(rba) * norm(rbc)))
         e_valence += k * (currenct_angle - valence_angle)^2
     end
     return e_valence / 2
@@ -266,7 +266,7 @@ end
 function initial_energy(simulation::NBodySimulation)
     (u0, v0, n) = gather_bodies_initial_coordinates(simulation.system)
     ms = get_masses(simulation.system)
-    return potential_energy(u0, simulation) + kinetic_energy(v0, ms) 
+    return potential_energy(u0, simulation) + kinetic_energy(v0, ms)
 end
 
 # Instead of treating NBodySimulation as a DiffEq problem and passing it into a solve method
@@ -316,10 +316,10 @@ end
     n = length(sr.simulation.system.bodies)
 
     if :gravitational ∈ keys(sr.simulation.system.potentials)
-    
+
         xlim --> 1.1 * [minimum(solution[1,1:n,:]), maximum(solution[1,1:n,:])]
-        ylim --> 1.1 * [minimum(solution[2,1:n,:]), maximum(solution[2,1:n,:])]        
-    
+        ylim --> 1.1 * [minimum(solution[2,1:n,:]), maximum(solution[2,1:n,:])]
+
         for i in 1:n
             @series begin
                 label --> "Orbit $i"
@@ -338,10 +338,10 @@ end
             xlim --> 1.1 * [0, borders.L]
             ylim --> 1.1 * [0, borders.L]
             zlim --> 1.1 * [0, borders.L]
-            map!(x ->  x -= borders.L * floor(x / borders.L), positions, positions)    
+            map!(x ->  x -= borders.L * floor(x / borders.L), positions, positions)
         end
 
-        
+
         seriestype --> :scatter
         markersize --> 5
 
@@ -370,9 +370,9 @@ end
     n = length(sr.simulation.system.bodies)
 
     borders = sr.simulation.boundary_conditions
-    
+
     cc = get_position(sr, time)
- 
+
     if borders isa PeriodicBoundaryConditions
         xlim --> 1.1 * [borders[1], borders[2]]
         ylim --> 1.1 * [borders[3], borders[4]]
@@ -382,7 +382,7 @@ end
         ylim --> 1.1 * [0, borders.L]
         zlim --> 1.1 * [0, borders.L]
 
-        
+
         map!(x ->  x -= borders.L * floor(x / borders.L), cc, cc)
     end
     seriestype --> :scatter
@@ -408,7 +408,7 @@ end
 function rdf(sr::SimulationResult)
     n = length(sr.simulation.system.bodies)
     pbc = sr.simulation.boundary_conditions
-    
+
     (ms, indxs) = obtain_data_for_lennard_jones_interaction(sr.simulation.system)
     indlen = length(indxs)
 
@@ -420,8 +420,8 @@ function rdf(sr::SimulationResult)
         for ind_i = 1:indlen
             i = indxs[ind_i]
             ri = @SVector [cc[1, i], cc[2, i], cc[3, i]]
-            for ind_j = ind_i + 1:indlen    
-                j = indxs[ind_j]    
+            for ind_j = ind_i + 1:indlen
+                j = indxs[ind_j]
                 rj = @SVector [cc[1, j], cc[2, j], cc[3, j]]
 
                 (rij, rij_2, success) = apply_boundary_conditions!(ri, rj, pbc, (0.5 * pbc.L)^2)
@@ -430,7 +430,7 @@ function rdf(sr::SimulationResult)
                     rij_1 = sqrt(rij_2)
                     bin = ceil(Int, rij_1 / dr)
                     if bin > 1 && bin <= maxbin
-                        hist[bin] += 2 
+                        hist[bin] += 2
                     end
                 end
             end
@@ -455,7 +455,7 @@ end
 
 function msd(sr::SimulationResult{<:PotentialNBodySystem})
     n = length(sr.simulation.system.bodies)
-    
+
     (ms, indxs) = obtain_data_for_lennard_jones_interaction(sr.simulation.system)
     indlen = length(indxs)
 
@@ -470,7 +470,7 @@ function msd(sr::SimulationResult{<:PotentialNBodySystem})
         for ind_i = 1:indlen
             i = indxs[ind_i]
             dr = @SVector [cc[1, i] - cc0[1,i], cc[2, i] - cc0[2,i], cc[3, i] - cc0[3,i]]
-            
+
             dr2[t] += dot(dr, dr)
         end
         dr2[t] /= indlen
@@ -481,7 +481,7 @@ end
 
 function msd(sr::SimulationResult{<:WaterSPCFw})
     n = length(sr.simulation.system.bodies)
-    
+
     mO = sr.simulation.system.mO
     mH = sr.simulation.system.mH
 
@@ -490,13 +490,13 @@ function msd(sr::SimulationResult{<:WaterSPCFw})
     dr2 = zeros(tlen)
 
     cc0 = get_position(sr, ts[1])
-            
+
     for t = 1:tlen
         cc = get_position(sr, ts[t])
         for i = 1:n
             indO, indH1, indH2 = 3 * (i - 1) + 1, 3 * (i - 1) + 2, 3 * (i - 1) + 3
             dr = ((cc[:,indO] - cc0[:,indO]) * mO + (cc[:,indH1] - cc0[:,indH1]) * mH + (cc[:,indH2] - cc0[:,indH2]) * mH) / (2 * mH + mO)
-            
+
             dr2[t] += dot(dr, dr)
         end
         dr2[t] /= n

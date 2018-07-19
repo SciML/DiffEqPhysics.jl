@@ -1,6 +1,6 @@
 using OrdinaryDiffEq, ForwardDiff
 
-struct HamiltonianProblem{iip} <: AbstractDynamicalODEProblem end
+struct HamiltonianProblem{iip} <: DiffEqBase.AbstractDynamicalODEProblem end
 
 function HamiltonianProblem(H,q0,p0,tspan,p=nothing;kwargs...)
   iip = (typeof(q0) <: AbstractArray) && !(typeof(q0) <: SArray)
