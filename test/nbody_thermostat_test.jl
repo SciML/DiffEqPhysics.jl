@@ -1,6 +1,6 @@
 println("====  Thermostat testing    ====")
 
-using StaticArrays
+using StochasticDiffEq
 
 let 
     T = 120.0 # °K
