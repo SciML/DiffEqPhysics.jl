@@ -5,13 +5,14 @@ module DiffEqPhysics
 using Reexport
 @reexport using DiffEqBase, OrdinaryDiffEq, RecursiveArrayTools
 using ForwardDiff, StaticArrays, RecipesBase, FileIO
+using Random, Printf, LinearAlgebra
 
 include("nbody_problem.jl")
 include("hamiltonian.jl")
 include("plot.jl")
 include("nbody_simulation.jl")
 
-export HamiltonianProblem, LagrangianProblem, NBodyProblem, plot_orbits
+export HamiltonianProblem, NBodyProblem, plot_orbits
 
 export NBodySimulation
 export MassBody, ChargedParticle, MagneticParticle

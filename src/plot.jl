@@ -13,7 +13,7 @@ end
     ind = i -> i:N:length(sol.u[1].x[1])
     for i in 1:N
         @series begin
-            vars=(ind(i)...)
+            vars=(ind(i)...,)
             label --> body_names[i]
             vars --> vars
             sol

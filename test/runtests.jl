@@ -1,4 +1,4 @@
-using DiffEqPhysics, ForwardDiff
+using DiffEqPhysics, ForwardDiff, StaticArrays, LinearAlgebra
 using Test
 
 test_solve(prob...) = mapreduce(p->solve(p, VelocityVerlet(), dt=1//2).u, ==, prob)

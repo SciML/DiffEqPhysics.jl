@@ -1,4 +1,4 @@
-using DiffEqPhysics
+using DiffEqPhysics, Dates
 
 const T = 370 # °K
 const T0 = 275 # °K
@@ -16,7 +16,7 @@ const Rel = 0.49*L
 const v_dev = sqrt(kb * T /mH2O)
 const τ = 0.5e-3 # ps
 const t1 = 0τ
-const t2 = 10τ # ps
+const t2 = 5τ # ps
 const k_bond = 1059.162*4.184*1e2 # kJ/(mol*nm^2)
 const k_angle = 75.90*4.184 # kJ/(mol*rad^2)
 const rOH = 0.1012 # nm

@@ -1,4 +1,4 @@
-using DiffEqPhysics, ForwardDiff, Test, RecursiveArrayTools
+using RecursiveArrayTools
 
 let
     G = 2.95912208286e-4

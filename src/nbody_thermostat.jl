@@ -28,7 +28,7 @@ end
 # N - number of particles
 # Nc - number of constraints
 function md_temperature(vs, ms, kb, N, Nc)
-    e_kin = sum(dot(ms, vec(sum(vs.^2, 1))))
+    e_kin = sum(dot(ms, vec(sum(vs.^2, dims=1))))
     temperature = e_kin / (kb * (3 * N - Nc))
     return temperature
 end
@@ -40,7 +40,7 @@ end
 
 function nosehoover_acceleration!(dv, u, v, ms, kb, N, Nc, ζind, p::NoseHooverThermostat)
     @. dv -= u[ζind] * v
-    dv[:,end] = 0
+    @. dv[:,end] = 0
     T = md_temperature(v[:, 1:N], ms, kb, N, Nc)
     ndf = 3 * N - Nc 
     v[ζind] = inv(p.τ)^2 * (T/p.T - (ndf+1)/ndf)

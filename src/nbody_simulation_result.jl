@@ -120,7 +120,7 @@ function temperature(result::SimulationResult, time::Real)
 end
 
 function kinetic_energy(velocities, masses)
-    ke = sum(dot(vec(sum(velocities.^2, 1)), masses / 2))
+    ke = sum(dot(vec(sum(velocities.^2, dims=1)), masses / 2))
     return ke
 end
 
@@ -298,7 +298,7 @@ function run_simulation_sde(s::NBodySimulation, args...; kwargs...)
 end
 
 function obtain_callbacks_for_so_ode_problem(s::NBodySimulation)
-    callback_array = Vector{DECallback}()
+    callback_array = Vector{DiffEqBase.DECallback}()
 
     if s.thermostat isa AndersenThermostat
         push!(callback_array, get_andersen_thermostating_callback(s))
