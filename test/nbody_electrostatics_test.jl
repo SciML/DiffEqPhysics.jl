@@ -1,7 +1,7 @@
-@testset "====  Electrostatics Functional Tests  ====" begin
+@testset "Electrostatics Functional Tests" begin
     k = 9e9
 
-    @testset "====  One particle rotates around another  ====" begin
+    @testset "One particle rotates around another" begin
     # small mass with negative charge rotating around more massive object with positive charge
 
         r = 100.0
@@ -30,8 +30,8 @@
         @test length(qs_act) == length(ms_act)
     end
 
-    @testset "====  Two positive charges repelling from each other  ====" begin
-    #   ("====               <---⊕-----r1-----⊕--->                ====")
+    @testset "Two positive charges repelling from each other" begin
+    #   ("               <---⊕-----r1-----⊕--->                ")
 
         q1 = 1e-3 # C
         q2 = 1e-3 # C

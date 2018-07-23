@@ -100,14 +100,14 @@ end
 function get_degrees_of_freedom(system::NBodySystem)
     n = length(system.bodies)
     nc = 0
-    ndf = n-nc
+    ndf = 3*n-nc
     (n, nc, ndf)
 end
 
 function get_degrees_of_freedom(system::WaterSPCFw)
     n = 3*length(system.bodies)
     nc = 2*length(system.bodies)
-    ndf = n-nc
+    ndf = 3*n-nc
     (n, nc, ndf)
 end
 
@@ -278,21 +278,27 @@ function initial_energy(simulation::NBodySimulation)
     return potential_energy(u0, simulation) + kinetic_energy(v0, ms)
 end
 
-# Instead of treating NBodySimulation as a DiffEq problem and passing it into a solve method
-# it is better to use a specific function for n-body simulations.
-function run_simulation(s::NBodySimulation, alg_type=Tsit5(), args...; kwargs...)
+function run_simulation(s::NBodySimulation, args...; kwargs...)
+    if s.thermostat isa LangevinThermostat
+        calculate_simulation_sde(s, args...; kwargs...)
+    else
+        calculate_simulation(s, args...; kwargs...)
+    end
+end
+
+function calculate_simulation(s::NBodySimulation, alg_type=Tsit5(), args...; kwargs...)
     solution = solve(ODEProblem(s), alg_type, args...; kwargs...)
     return SimulationResult(solution, s)
 end
 
 # this should be a method for integrators designed for the SecondOrderODEProblem (It is worth somehow to sort them from other algorithms)
-function run_simulation(s::NBodySimulation, alg_type::Union{VelocityVerlet,DPRKN6,Yoshida6}, args...; kwargs...)
+function calculate_simulation(s::NBodySimulation, alg_type::Union{VelocityVerlet,DPRKN6,Yoshida6}, args...; kwargs...)
     cb = obtain_callbacks_for_so_ode_problem(s)
     solution = solve(SecondOrderODEProblem(s), alg_type, args...; callback=cb, kwargs...)
     return SimulationResult(solution, s)
 end
 
-function run_simulation_sde(s::NBodySimulation, args...; kwargs...)
+function calculate_simulation_sde(s::NBodySimulation, args...; kwargs...)
     solution = solve(SDEProblem(s), args...; kwargs...)
     return SimulationResult(solution, s)
 end

@@ -1,4 +1,4 @@
-@testset "====  Magnetostatics Functional Tests  ====" begin
+@testset "Magnetostatics Functional Tests" begin
     @testset "Repelling magnets" begin
         d1 = 0.01 # m
         m1 = 5e-6 # kg

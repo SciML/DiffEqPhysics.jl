@@ -1,6 +1,6 @@
 using StochasticDiffEq
 
-@testset "====  Thermostat testing    ====" begin 
+@testset "Thermostat testing" begin 
     @testset "Andersen thermostat" begin 
         T = 120.0 # °K
         kb = 1.38e-23 # J/K
@@ -121,7 +121,7 @@ using StochasticDiffEq
         thermostat = LangevinThermostat(T0, 10)
         pbc = CubicPeriodicBoundaryConditions(L)
         simulation = NBodySimulation(lj_system, (t1, t2), pbc, thermostat, kb);
-        result = run_simulation_sde(simulation, EM(),  dt=τ)
+        result = run_simulation(simulation, EM(),  dt=τ)
      
         T2 = temperature(result, t2)
         ε = 0.5

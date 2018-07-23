@@ -1,5 +1,4 @@
-
-@testset "====  Water SPC/Fw test   ====" begin
+@testset "Water SPC/Fw test" begin
     qe = 1.6e-19
     Na = 6.022e23
     T = 298.16 # °K
@@ -60,11 +59,11 @@
             @test (ang - ∠HOH) / ∠HOH ≈ 0.0 atol = ε
         end
 
-        e_tot_1 = total_energy.(result, t1)
+        e_tot_1 = total_energy(result, t1)
         e_tot_init = initial_energy(simulation)
         @test e_tot_1 == e_tot_init
 
-        e_tot_2 = total_energy.(result, t2)
+        e_tot_2 = total_energy(result, t2)
     #@test (e_tot_1 - e_tot_2)/e_tot_1 ≈ 0.0 atol = ε
 
         temperature_expected = (dot(v1, v1) + dot(v2, v2) + dot(v3, v3)) * (2 * mH + mO) / (kb * 21)    

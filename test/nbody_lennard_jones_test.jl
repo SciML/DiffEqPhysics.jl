@@ -1,6 +1,6 @@
 
 @testset "Lennard-Jones potential" begin
-    @testset "====     Two interacting particles   ====" begin
+    @testset "Two interacting particles" begin
 
         m1 = 1.0
         m2 = 1.0

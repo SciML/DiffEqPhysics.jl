@@ -364,7 +364,6 @@ function DiffEqBase.SDEProblem(simulation::NBodySimulation{<:PotentialNBodySyste
     acceleration_functions = gather_accelerations_for_potentials(simulation)   
 
     therm = simulation.thermostat
-    m = simulation.system.bodies[1].m
 
     function deterministic_acceleration!(du, u, p, t)
         du[:, 1:n] = @view u[:, n + 1:2n];
@@ -379,8 +378,9 @@ function DiffEqBase.SDEProblem(simulation::NBodySimulation{<:PotentialNBodySyste
         @. du[:, n + 1:end] -= therm.γ*u[:, n + 1:end]
     end
 
+    σ = sqrt(2*therm.γ*simulation.kb*therm.T/simulation.system.bodies[1].m)
     function noise!(du, u, p, t)
-        @. du[:, n + 1:end] += sqrt(2*therm.γ*simulation.kb*therm.T/m)
+        @. du[:, n + 1:end] += σ
     end
     
     return SDEProblem(deterministic_acceleration!, noise!, hcat(u0, v0), simulation.tspan)
