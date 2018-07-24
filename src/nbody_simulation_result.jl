@@ -337,10 +337,11 @@ function apply_andersen_rescaling_velocity(integrator, i, kb, system::PotentialN
 end
 
 function apply_andersen_rescaling_velocity(integrator, i, kb, system::WaterSPCFw, p::AndersenThermostat)
-    v = randn(3)*sqrt( kb*p.T/(2*system.mH+system.mO))
-    @. integrator.u.x[1][:,i] = v
-    @. integrator.u.x[1][:,i+1] = v
-    @. integrator.u.x[1][:,i+2] = v
+    vO = sqrt(kb*p.T/system.mO)
+    vH = sqrt(kb*p.T/system.mH)
+    @. integrator.u.x[1][:,3*(i-1)+1] = vO * randn()
+    @. integrator.u.x[1][:,3*(i-1)+2] = vH * randn()
+    @. integrator.u.x[1][:,3*(i-1)+3] = vH * randn()
 end
 
 @recipe function generate_data_for_scatter(sr::SimulationResult{<:PotentialNBodySystem}, time::Real=0.0)

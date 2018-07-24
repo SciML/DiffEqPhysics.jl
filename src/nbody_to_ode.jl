@@ -371,7 +371,7 @@ function DiffEqBase.SDEProblem(simulation::NBodySimulation{<:PotentialNBodySyste
         @inbounds for i = 1:n
             a = MVector(0.0, 0.0, 0.0)
             for acceleration! in acceleration_functions
-                acceleration!(a, u[:, 1:n], u[:, n + 1:end], t, i);                
+                acceleration!(a, (@view u[:, 1:n]), (@view u[:, n + 1:end]), t, i);                
             end
             du[:, n + i] .= a
         end
