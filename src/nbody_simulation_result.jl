@@ -31,19 +31,19 @@ function Base.next(sr::SimulationResult, state)
 end
 
 function get_velocity(sr::SimulationResult, time::Real, i::Integer=0)
+    n = get_coordinate_vector_count(sr.simulation.system)
+    
     if typeof(sr.solution[1]) <: RecursiveArrayTools.ArrayPartition
         velocities = sr(time).x[1]
-        n = size(velocities, 2)
         if i <= 0
-            return velocities[:, 1:end]
+            return velocities[:, 1:n]
         else
             return velocities[:, i]
         end
     else
         velocities = sr(time)
-        n = div(size(velocities, 2), 2)
         if i <= 0
-            return @view velocities[:, n + 1:end]
+            return @view velocities[:, n + 1:2*n]
         else
             return @view velocities[:, n + i]
         end
@@ -53,11 +53,11 @@ end
 function get_position(sr::SimulationResult, time::Real, i::Integer=0)
     if typeof(sr.solution[1]) <: RecursiveArrayTools.ArrayPartition
         positions = sr(time).x[2]
-        n = size(positions, 2)
     else
         positions = sr(time)
-        n = div(size(positions, 2), 2)
     end
+
+    n = get_coordinate_vector_count(sr.simulation.system)
 
     if i <= 0
         return @view positions[:, 1:n]
@@ -86,32 +86,41 @@ function get_masses(system::WaterSPCFw)
     return ms
 end
 
-function temperature(result::SimulationResult, time::Real)
-    kb = result.simulation.kb
-    velocities = get_velocity(result, time)
-    masses = get_masses(result.simulation.system)
-    temperature = mean(sum(velocities.^2, 1) .* masses) / (3kb)
-    return temperature
+function get_coordinate_vector_count(system::NBodySystem)
+    return length(system.bodies)
 end
 
-function temperature(result::SimulationResult{<:WaterSPCFw}, time::Real)
-    kb = result.simulation.kb
-    system = result.simulation.system
+function get_coordinate_vector_count(system::WaterSPCFw)
+    return 3* length(system.bodies)
+end
+
+# n - number of particles
+# nc - number of constraints
+# ndf - number of degrees of freedom
+function get_degrees_of_freedom(system::NBodySystem)
     n = length(system.bodies)
+    nc = 0
+    ndf = 3*n-nc
+    (n, nc, ndf)
+end
+
+function get_degrees_of_freedom(system::WaterSPCFw)
+    n = 3*length(system.bodies)
+    nc = 2*length(system.bodies)
+    ndf = 3*n-nc
+    (n, nc, ndf)
+end
+
+function temperature(result::SimulationResult, time::Real)
+    kb = result.simulation.kb
+    (n, nc, ndf) = get_degrees_of_freedom(result.simulation.system)
     vs = get_velocity(result, time)
-    mH2O = system.mO + 2 * system.mH
-    v2 = zeros(n)
-    for i = 1:n
-        indO, indH1, indH2 = 3 * (i - 1) + 1, 3 * (i - 1) + 2, 3 * (i - 1) + 3
-        v_c = @. (vs[:,indO] * system.mO + vs[:,indH1] * system.mH + vs[:,indH2] * system.mH) / mH2O
-        v2[i] = dot(v_c, v_c)
-    end
-    temperature = mean(v2) * mH2O / (3kb)
-    return temperature
+    ms = get_masses(result.simulation.system)
+    return md_temperature(vs, ms, kb, n, nc)
 end
 
 function kinetic_energy(velocities, masses)
-    ke = sum(dot(vec(sum(velocities.^2, 1)), masses / 2))
+    ke = sum(dot(vec(sum(velocities.^2, dims=1)), masses / 2))
     return ke
 end
 
@@ -264,27 +273,38 @@ function total_energy(sr::SimulationResult, time::Real)
 end
 
 function initial_energy(simulation::NBodySimulation)
-    (u0, v0, n) = gather_bodies_initial_coordinates(simulation.system)
+    (u0, v0, n) = gather_bodies_initial_coordinates(simulation)
     ms = get_masses(simulation.system)
     return potential_energy(u0, simulation) + kinetic_energy(v0, ms)
 end
 
-# Instead of treating NBodySimulation as a DiffEq problem and passing it into a solve method
-# it is better to use a specific function for n-body simulations.
-function run_simulation(s::NBodySimulation, alg_type=Tsit5(), args...; kwargs...)
+function run_simulation(s::NBodySimulation, args...; kwargs...)
+    if s.thermostat isa LangevinThermostat
+        calculate_simulation_sde(s, args...; kwargs...)
+    else
+        calculate_simulation(s, args...; kwargs...)
+    end
+end
+
+function calculate_simulation(s::NBodySimulation, alg_type=Tsit5(), args...; kwargs...)
     solution = solve(ODEProblem(s), alg_type, args...; kwargs...)
     return SimulationResult(solution, s)
 end
 
 # this should be a method for integrators designed for the SecondOrderODEProblem (It is worth somehow to sort them from other algorithms)
-function run_simulation(s::NBodySimulation, alg_type::Union{VelocityVerlet,DPRKN6,Yoshida6}, args...; kwargs...)
+function calculate_simulation(s::NBodySimulation, alg_type::Union{VelocityVerlet,DPRKN6,Yoshida6}, args...; kwargs...)
     cb = obtain_callbacks_for_so_ode_problem(s)
     solution = solve(SecondOrderODEProblem(s), alg_type, args...; callback=cb, kwargs...)
     return SimulationResult(solution, s)
 end
 
+function calculate_simulation_sde(s::NBodySimulation, args...; kwargs...)
+    solution = solve(SDEProblem(s), args...; kwargs...)
+    return SimulationResult(solution, s)
+end
+
 function obtain_callbacks_for_so_ode_problem(s::NBodySimulation)
-    callback_array = Vector{DECallback}()
+    callback_array = Vector{DiffEqBase.DECallback}()
 
     if s.thermostat isa AndersenThermostat
         push!(callback_array, get_andersen_thermostating_callback(s))
@@ -296,19 +316,32 @@ end
 function get_andersen_thermostating_callback(s::NBodySimulation)
     p = s.thermostat::AndersenThermostat
     n = length(s.system.bodies)
-    v_dev = sqrt(p.kb * p.T / s.system.bodies[1].m)
 
     condition = function (u, t, integrator)
         true
     end
     affect! = function (integrator)
+        collision_prob = p.ν * (integrator.t - integrator.tprev)
         for i = 1:n
-            if randn() < p.ν * (integrator.t - integrator.tprev)
-                @. integrator.u.x[1][:,i] = v_dev * randn()
+            if rand() < collision_prob
+                apply_andersen_rescaling_velocity(integrator, i, s.kb, s.system, p)
             end
         end
     end
     cb = DiscreteCallback(condition, affect!)
+end
+
+function apply_andersen_rescaling_velocity(integrator, i, kb, system::PotentialNBodySystem, p::AndersenThermostat)
+    v_dev = sqrt(kb * p.T / system.bodies[1].m)
+    @. integrator.u.x[1][:,i] = v_dev * randn()
+end
+
+function apply_andersen_rescaling_velocity(integrator, i, kb, system::WaterSPCFw, p::AndersenThermostat)
+    vO = sqrt(kb*p.T/system.mO)
+    vH = sqrt(kb*p.T/system.mH)
+    @. integrator.u.x[1][:,3*(i-1)+1] = vO * randn()
+    @. integrator.u.x[1][:,3*(i-1)+2] = vH * randn()
+    @. integrator.u.x[1][:,3*(i-1)+3] = vH * randn()
 end
 
 @recipe function generate_data_for_scatter(sr::SimulationResult{<:PotentialNBodySystem}, time::Real=0.0)
@@ -503,4 +536,53 @@ function msd(sr::SimulationResult{<:WaterSPCFw})
     end
 
     (ts, dr2)
+end
+
+# coordinates should be in angstroms
+function save(f::File{format"ProteinDataBank"}, sr::SimulationResult)
+    open(f, "w") do s
+        write_pdb_data(s,sr)
+    end
+end
+
+function write_pdb_data(f::IO, sr::SimulationResult{<:WaterSPCFw})
+    L = 10*sr.simulation.boundary_conditions.L
+    strL = @sprintf("%9.3f",L)
+    strA = @sprintf("%7.2f",90)
+    #println(f,"CRYST1",lpad(strL,9),lpad(strL,9),lpad(strL,9),lpad(strA,7),lpad(strA,7),lpad(strA,7))
+    n = length(sr.simulation.system.bodies)
+    count = 0
+    for t in sr.solution.t
+        cc = 10*get_position(sr, t)
+        map!(x ->  x -= L * floor(x / L), cc, cc)
+        count+=1      
+        println(f,rpad("MODEL",10), count)
+        println(f,"REMARK 250 time=$t picoseconds")
+        for i ∈ 1:n
+            indO, indH1, indH2 = 3 * (i - 1) + 1, 3 * (i - 1) + 2, 3 * (i - 1) + 3
+            
+            println(f,"HETATM",lpad(indO,5),"  ",rpad("O",4),"HOH",lpad(i,6),"    ", lpad(@sprintf("%8.3f",cc[1,indO]),8), lpad(@sprintf("%8.3f",cc[2,indO]),8), lpad(@sprintf("%8.3f",cc[3,indO]),8),lpad("1.00",6),lpad("0.00",6), lpad("",10), lpad("O",2))
+            println(f,"HETATM",lpad(indH1,5),"  ",rpad("H1",4),"HOH",lpad(i,6),"    ", lpad(@sprintf("%8.3f",cc[1,indH1]),8), lpad(@sprintf("%8.3f",cc[2,indH1]),8), lpad(@sprintf("%8.3f",cc[3,indH1]),8),lpad("1.00",6),lpad("0.00",6), lpad("",10), lpad("H",2))
+            println(f,"HETATM",lpad(indH2,5),"  ",rpad("H2",4),"HOH",lpad(i,6),"    ", lpad(@sprintf("%8.3f",cc[1,indH2]),8), lpad(@sprintf("%8.3f",cc[2,indH2]),8), lpad(@sprintf("%8.3f",cc[3,indH2]),8),lpad("1.00",6),lpad("0.00",6), lpad("",10), lpad("H",2))
+            end
+        println(f,"ENDMDL")
+    end
+end
+
+function write_pdb_data(f::IO, sr::SimulationResult)
+    n = length(sr.simulation.system.bodies)
+    L = 10*sr.simulation.boundary_conditions.L
+    count = 0
+    for t in sr.solution.t
+        cc = 10*get_position(sr, t)
+        map!(x ->  x -= L * floor(x / L), cc, cc)
+        count+=1      
+        println(f,rpad("MODEL",10), count)
+        println(f,"REMARK 250 time=$t steps")
+        for i ∈ 1:n
+            
+            println(f,"HETATM",lpad(i,5),"  ",rpad("Ar",4),"Ar",lpad(i,6),"    ", lpad(@sprintf("%8.3f",cc[1,i]),8), lpad(@sprintf("%8.3f",cc[2,i]),8), lpad(@sprintf("%8.3f",cc[3,i]),8),lpad("1.00",6),lpad("0.00",6), lpad("",10), lpad("Ar",2))
+        end
+        println(f,"ENDMDL")
+    end
 end

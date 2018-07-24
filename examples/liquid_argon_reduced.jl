@@ -30,7 +30,7 @@ const m = 39.95 * 1.6747 * 1e-27 # kg
 const N = 216#floor(Int, ρ * L^3 / m)
 const L = (m*N/ρ)^(1/3)#10.229σ
 const R = 2.25σ   
-const v_dev = sqrt(3*kb * T / m)
+const v_dev = sqrt(kb * T / m)
 const τ = 0.5e-15 # σ/v, fs
 const t1 = 0.0
 const t2 = 3000τ
@@ -57,3 +57,10 @@ result = @time run_simulation(simulation, VelocityVerlet(), dt=_τ)
 #using Plots
 #plot(rs, grf, xlim=[0, 0.4999_L], label=["Radial distribution function"],ylabel="g(r)", xlabel="r")
 #plot(rs/_σ, grf, xlim=[0, 0.4999_L/_σ], label=["Radial distribution function"],ylabel="g(r)", xlabel="r/sigma")
+
+
+time_now = Dates.format(now(), "yyyy_mm_dd_HH_MM_SS")
+Nactual = length(bodies)
+timesteps = round(length(result.solution.t))
+
+@time save_to_pdb(result, "D:/liquid argon simulation $Nactual molecules and $timesteps steps $time_now.pdb" )

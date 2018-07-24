@@ -4,14 +4,15 @@ module DiffEqPhysics
 
 using Reexport
 @reexport using DiffEqBase, OrdinaryDiffEq, RecursiveArrayTools
-using ForwardDiff, StaticArrays, RecipesBase
+using ForwardDiff, StaticArrays, RecipesBase, FileIO
+using Random, Printf, LinearAlgebra
 
 include("nbody_problem.jl")
 include("hamiltonian.jl")
 include("plot.jl")
 include("nbody_simulation.jl")
 
-export HamiltonianProblem, LagrangianProblem, NBodyProblem, plot_orbits
+export HamiltonianProblem, NBodyProblem, plot_orbits
 
 export NBodySimulation
 export MassBody, ChargedParticle, MagneticParticle
@@ -19,8 +20,9 @@ export PotentialParameters, LennardJonesParameters, GravitationalParameters,
        ElectrostaticParameters, MagnetostaticParameters, SPCFwParameters
 export PotentialNBodySystem, ChargedParticles, GravitationalSystem, WaterSPCFw
 export PeriodicBoundaryConditions, CubicPeriodicBoundaryConditions, InfiniteBox
-export AndersenThermostat
+export AndersenThermostat, BerendsenThermostat, NoseHooverThermostat, LangevinThermostat
 export run_simulation, get_position, get_velocity, get_masses, temperature,
-       initial_energy, kinetic_energy, potential_energy, total_energy, rdf, msd
+       initial_energy, kinetic_energy, potential_energy, total_energy, rdf, msd,
+       generate_bodies_in_cell_nodes, run_simulation_sde
 
 end # module

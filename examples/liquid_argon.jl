@@ -69,3 +69,28 @@ lj_system = PotentialNBodySystem(bodies, Dict(:lennard_jones => jl_parameters));
 simulation = NBodySimulation(lj_system, (t1, t2), pbc, thermostat);
 #result = run_simulation(simulation, Tsit5())
 result = @time run_simulation(simulation, VelocityVerlet(), dt=τ)
+
+#=
+using Plots
+import GR
+(rs, grf) = rdf(result)
+(ts, dr2) = msd(result)
+plot(rs/σ, grf, xlim=[0, 0.4999L/σ], label=["Radial distribution function"],ylabel="g(r)", xlabel="r/sigma")
+
+using JLD
+time_now = Dates.format(now(), "yyyy_mm_dd_HH_MM_SS")
+Nactual = length(bodies)
+timesteps = round(length(result.solution.t))
+#save("D:/water $Nactual molecules $timesteps steps.jld", "rs", rs, "grf", grf, "ts", ts, "dr2", dr2)
+save("D:/liquid argon $Nactual molecules $timesteps steps $time_now.jld", "rs", rs, "grf", grf, "ts", ts, "dr2", dr2, "e_tot", e_tot, "e_kin", e_kin, "e_pot", e_pot)
+=#
+#=
+using Plots
+import GR
+time_now = Dates.format(now(), "yyyy_mm_dd_HH_MM_SS")
+Nactual = length(bodies)
+timesteps = round(length(result.solution.t))
+@time animate(result, "D:/$Nactual liquid argon particles with $timesteps timesteps $time_now.gif")
+
+#plot(simulation)
+=#
