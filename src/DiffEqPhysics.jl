@@ -1,22 +1,19 @@
-__precompile__()
-
 module DiffEqPhysics
 
 using Reexport
-@reexport using DiffEqBase, OrdinaryDiffEq, RecursiveArrayTools
-using ForwardDiff, StaticArrays, RecipesBase, FileIO
+@reexport using DiffEqBase, RecursiveArrayTools
+using ForwardDiff, StaticArrays, RecipesBase
 using Random, Printf, LinearAlgebra
 
 include("nbody_problem.jl")
 include("hamiltonian.jl")
 include("plot.jl")
-include("nbody_simulation.jl")
 
 export HamiltonianProblem, NBodyProblem, plot_orbits
 
 export NBodySimulation
 export MassBody, ChargedParticle, MagneticParticle
-export PotentialParameters, LennardJonesParameters, GravitationalParameters, 
+export PotentialParameters, LennardJonesParameters, GravitationalParameters,
        ElectrostaticParameters, MagnetostaticParameters, SPCFwParameters
 export PotentialNBodySystem, ChargedParticles, GravitationalSystem, WaterSPCFw
 export PeriodicBoundaryConditions, CubicPeriodicBoundaryConditions, InfiniteBox
