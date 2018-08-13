@@ -1,5 +1,3 @@
-using OrdinaryDiffEq, ForwardDiff, RecursiveArrayTools
-
 function NBodyProblem(potential,M,v0,u0,tspan,p=nothing; kwargs...)
     # check number of particles
     @assert length(u0) == length(v0)

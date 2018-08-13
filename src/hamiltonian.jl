@@ -1,5 +1,3 @@
-using OrdinaryDiffEq, ForwardDiff
-
 struct HamiltonianProblem{iip} <: DiffEqBase.AbstractDynamicalODEProblem end
 
 function HamiltonianProblem(H,q0,p0,tspan,p=nothing;kwargs...)
