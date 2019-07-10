@@ -17,7 +17,7 @@ function HamiltonianProblem{T}(H,p0,q0,tspan,p=nothing;kwargs...) where T
                 ForwardDiff.derivative(v->H(v, x, p), v)
             end
 
-            return ODEProblem(DynamicalODEFunction{T}(dp,dq), (p0,q0), tspan, p; kwargs...)
+            return ODEProblem(DynamicalODEFunction{T}(dp,dq), ArrayPartition(p0,q0), tspan, p; kwargs...)
         else
             dp = function (v,x,p,t)
                 ForwardDiff.gradient(x->-H(v, x, p), x)
@@ -26,7 +26,7 @@ function HamiltonianProblem{T}(H,p0,q0,tspan,p=nothing;kwargs...) where T
                 ForwardDiff.gradient(v->H(v, x, p), v)
             end
 
-            return ODEProblem(DynamicalODEFunction{T}(dp,dq), (p0,q0), tspan, p; kwargs...)
+            return ODEProblem(DynamicalODEFunction{T}(dp,dq), ArrayPartition(p0,q0), tspan, p; kwargs...)
         end
     else
         let cfg = ForwardDiff.GradientConfig(PhysicsTag(), p0), cfg2 = ForwardDiff.GradientConfig(PhysicsTag(), q0)
@@ -38,7 +38,7 @@ function HamiltonianProblem{T}(H,p0,q0,tspan,p=nothing;kwargs...) where T
                 fun1 = v-> H(v, x, p)
                 ForwardDiff.gradient!(dx, fun1, v, cfg, Val{false}())
             end
-            return ODEProblem(DynamicalODEFunction{T}(dp,dq), (p0,q0), tspan, p; kwargs...)
+            return ODEProblem(DynamicalODEFunction{T}(dp,dq), ArrayPartition(p0,q0), tspan, p; kwargs...)
         end
     end
 end
