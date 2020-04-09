@@ -7,7 +7,7 @@ end
 
 struct PhysicsTag end
 
-function HamiltonianProblem{T}(H,p0,q0,tspan,p=nothing;kwargs...) where T
+function HamiltonianProblem{T}(H,q0,p0,tspan,p=nothing;kwargs...) where T
     if T == false
         if typeof(q0) <: Number
             dp = function (v,x,p,t)
