@@ -1,13 +1,13 @@
 struct HamiltonianProblem{iip} <: DiffEqBase.AbstractDynamicalODEProblem end
 
-function HamiltonianProblem(H,q0,p0,tspan,p=nothing;kwargs...)
+function HamiltonianProblem(H,p0,q0,tspan,p=nothing;kwargs...)
   iip = (typeof(q0) <: AbstractArray) && !(typeof(q0) <: SArray)
-  HamiltonianProblem{iip}(H,q0,p0,tspan,p;kwargs...)
+  HamiltonianProblem{iip}(H,p0,q0,tspan,p;kwargs...)
 end
 
 struct PhysicsTag end
 
-function HamiltonianProblem{T}(H,q0,p0,tspan,p=nothing;kwargs...) where T
+function HamiltonianProblem{T}(H,p0,q0,tspan,p=nothing;kwargs...) where T
     if T == false
         if typeof(q0) <: Number
             dp = function (v,x,p,t)
