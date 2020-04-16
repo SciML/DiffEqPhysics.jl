@@ -26,7 +26,7 @@ params = [g,m,l]
 u0 = [1.0,1.0]
 
 prob = ODEProblem(pendulum, u0, (0., 100.), params)
-sol1 = solve(prob, SSPRK83(), dt = .05)
+sol1 = solve(prob, AutoVern7(Rodas5()), dt = .05)
 
 #==========================================================#
 
@@ -50,7 +50,7 @@ params = [g,m,l]
 ℒ₀ = 1.
 
 prob = HamiltonianProblem(H, θ₀, ℒ₀, (0., 100.), p=params)
-sol2 = solve(prob, SSPRK83(), dt = .05);
+sol2 = solve(prob, SofSpa10(), dt = .05);
 #==========================================================#
 
 

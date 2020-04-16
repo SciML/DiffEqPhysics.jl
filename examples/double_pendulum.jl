@@ -40,7 +40,7 @@ params = [l1, l2, m1, m2, g]
 times = (0., 25.)
 u0 = [1.,1.,1.,1.]
 prob = ODEProblem(doublependulum, u0, times, params)
-sol1 = solve(prob, SSPRK83(), dt = .05)
+sol1 = solve(prob, AutoVern7(Rodas5()), dt = .005)
 
 #plot solution
 plot(sol1, vars=1, xlim=(0,20), label="Momentum1")
@@ -75,7 +75,7 @@ q0 = [1.0,1.0]
 p0 = [1.0,1.0]
 times = (0.,25.)
 prob = HamiltonianProblem(H, q0, p0, times, p=params)
-sol2 = solve(prob, SSPRK83(), dt = .05)
+sol2 = solve(prob, SofSpa10(), dt = .05)
 
 plot(sol2, vars=1, xlim=(0,20), label="Momentum1")
 plot!(sol2, vars=2, xlim=(0,20), label="Momentum2")
