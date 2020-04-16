@@ -1,7 +1,6 @@
 using DiffEqPhysics, ForwardDiff, OrdinaryDiffEq
 using StaticArrays, LinearAlgebra
-using Test
+using SafeTestsets, Test
 
-test_solve(prob...) = mapreduce(p->solve(p, VelocityVerlet(), dt=1//2).u, ==, prob)
-include("hamiltonian_test.jl")
-include("nbody_test.jl")
+@safetestset "Hamiltonian Test" begin include("hamiltonian_test.jl") end
+#@safetestset "N-Body Test" begin include("nbody_test.jl") end
