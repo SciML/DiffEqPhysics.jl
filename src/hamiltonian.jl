@@ -26,15 +26,15 @@ function HamiltonianProblem{false}(H,p0,q0,tspan,p=nothing;kwargs...)
 end
 
 function HamiltonianProblem{true}(H,p0,q0,tspan,p=nothing;kwargs...)
-    cfg2 = ForwardDiff.GradientConfig(PhysicsTag(), q0)
-    dp = function (dv,v,x,p,t)
-        fun2 = x->-H(v, x, p)
-        ForwardDiff.gradient!(dv, fun2, x, cfg2, Val{false}())
+    let cfg = ForwardDiff.GradientConfig(PhysicsTag(), p0), cfg2 = ForwardDiff.GradientConfig(PhysicsTag(), q0)
+        dp = function (dv,v,x,p,t)
+            fun2 = x->-H(v, x, p)
+            ForwardDiff.gradient!(dv, fun2, x, cfg2, Val{false}())
+        end
+        dq = function (dx,v,x,p,t)
+            fun1 = v-> H(v, x, p)
+            ForwardDiff.gradient!(dx, fun1, v, cfg, Val{false}())
+        end
+        return ODEProblem(DynamicalODEFunction{true}(dp,dq), ArrayPartition(p0,q0), tspan, p; kwargs...)
     end
-    cfg = ForwardDiff.GradientConfig(PhysicsTag(), p0)
-    dq = function (dx,v,x,p,t)
-        fun1 = v-> H(v, x, p)
-        ForwardDiff.gradient!(dx, fun1, v, cfg, Val{false}())
-    end
-    return ODEProblem(DynamicalODEFunction{true}(dp,dq), ArrayPartition(p0,q0), tspan, p; kwargs...)
 end

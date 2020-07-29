@@ -7,16 +7,16 @@ function NBodyProblem(potential,M,v0,u0,tspan,p=nothing; kwargs...)
     @assert dim*length(M) == N
     @assert dim ∈ (2, 3)
 
-    fun = FWrapper{typeof(potential),typeof(tspan[1]),typeof(M),typeof(p)}(potential,tspan[1],M,p)
-    cfg = ForwardDiff.GradientConfig(fun, u0)
-    function acceleration!(dv,v,x,p,t)
-        fun.t = t
-        ForwardDiff.gradient!(dv, fun, x, cfg)
-        for x in dv.x
-            x ./= -M
+    let fun = FWrapper{typeof(potential),typeof(tspan[1]),typeof(M),typeof(p)}(potential,tspan[1],M,p), cfg = ForwardDiff.GradientConfig(fun, u0)
+        function acceleration!(dv,v,x,p,t)
+            fun.t = t
+            ForwardDiff.gradient!(dv, fun, x, cfg)
+            for x in dv.x
+                x ./= -M
+            end
         end
+        return SecondOrderODEProblem{true}(acceleration!, v0, u0, tspan, p; kwargs...)
     end
-    return SecondOrderODEProblem{true}(acceleration!, v0, u0, tspan, p; kwargs...)
 end
 
 mutable struct FWrapper{F,T,MType,P}
