@@ -7,38 +7,34 @@ end
 
 struct PhysicsTag end
 
-function HamiltonianProblem{T}(H,p0,q0,tspan,p=nothing;kwargs...) where T
-    if T == false
-        if typeof(q0) <: Number
-            dp = function (v,x,p,t)
-                ForwardDiff.derivative(x->-H(v, x, p), x)
-            end
-            dq = function (v,x,p,t)
-                ForwardDiff.derivative(v->H(v, x, p), v)
-            end
+function generic_derivative(q0, hami, x)
+    ForwardDiff.gradient(hami, x)
+end
 
-            return ODEProblem(DynamicalODEFunction{T}(dp,dq), ArrayPartition(p0,q0), tspan, p; kwargs...)
-        else
-            dp = function (v,x,p,t)
-                ForwardDiff.gradient(x->-H(v, x, p), x)
-            end
-            dq = function (v,x,p,t)
-                ForwardDiff.gradient(v->H(v, x, p), v)
-            end
+function generic_derivative(q0::Number, hami, x)
+    ForwardDiff.derivative(hami, x)
+end
 
-            return ODEProblem(DynamicalODEFunction{T}(dp,dq), ArrayPartition(p0,q0), tspan, p; kwargs...)
+function HamiltonianProblem{false}(H,p0,q0,tspan,p=nothing;kwargs...)
+    dp = function (v,x,p,t)
+        generic_derivative(q0, x->-H(v, x, p), x)
+    end
+    dq = function (v,x,p,t)
+        generic_derivative(q0, v->H(v, x, p), v)
+    end
+    return ODEProblem(DynamicalODEFunction{false}(dp,dq), ArrayPartition(p0,q0), tspan, p; kwargs...)
+end
+
+function HamiltonianProblem{true}(H,p0,q0,tspan,p=nothing;kwargs...)
+    let cfg = ForwardDiff.GradientConfig(PhysicsTag(), p0), cfg2 = ForwardDiff.GradientConfig(PhysicsTag(), q0)
+        dp = function (dv,v,x,p,t)
+            fun2 = x->-H(v, x, p)
+            ForwardDiff.gradient!(dv, fun2, x, cfg2, Val{false}())
         end
-    else
-        let cfg = ForwardDiff.GradientConfig(PhysicsTag(), p0), cfg2 = ForwardDiff.GradientConfig(PhysicsTag(), q0)
-            dp = function (dv,v,x,p,t)
-                fun2 = x->-H(v, x, p)
-                ForwardDiff.gradient!(dv, fun2, x, cfg2, Val{false}())
-            end
-            dq = function (dx,v,x,p,t)
-                fun1 = v-> H(v, x, p)
-                ForwardDiff.gradient!(dx, fun1, v, cfg, Val{false}())
-            end
-            return ODEProblem(DynamicalODEFunction{T}(dp,dq), ArrayPartition(p0,q0), tspan, p; kwargs...)
+        dq = function (dx,v,x,p,t)
+            fun1 = v-> H(v, x, p)
+            ForwardDiff.gradient!(dx, fun1, v, cfg, Val{false}())
         end
+        return ODEProblem(DynamicalODEFunction{true}(dp,dq), ArrayPartition(p0,q0), tspan, p; kwargs...)
     end
 end
