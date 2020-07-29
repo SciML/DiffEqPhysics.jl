@@ -9,7 +9,7 @@ end
     dim = p.dim
     @assert dim ∈ (2, 3)
     N = length(sol.u[1].x[1].x[1])
-    body_names = body_names==nothing ? ["orbit $i" for i in 1:N] : body_names
+    body_names = body_names === nothing ? ["orbit $i" for i in 1:N] : body_names
     ind = i -> i:N:length(sol.u[1].x[1])
     for i in 1:N
         @series begin
@@ -30,7 +30,7 @@ export orbitplot
 function plot_orbits(sol;body_names=nothing,dim=3,kwargs...)
     @assert dim ∈ (2, 3)
     N = length(sol.u[1].x[1].x[1])
-    body_names = body_names==nothing ? ["orbit $i" for i in 1:N] : body_names
+    body_names = body_names === nothing ? ["orbit $i" for i in 1:N] : body_names
     ind = i -> i:N:length(sol.u[1].x[1])
     p = plot(sol, vars=(ind(1)...,), lab=body_names[1], kwargs...)
     for i in 2:N
