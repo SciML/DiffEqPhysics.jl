@@ -7,7 +7,9 @@
 [![codecov.io](http://codecov.io/github/ChrisRackauckas/DiffEqPhysics.jl/coverage.svg?branch=master)](http://codecov.io/github/ChrisRackauckas/DiffEqPhysics.jl?branch=master)
 [![DiffEqPhysics](http://pkg.julialang.org/badges/DiffEqPhysics_0.6.svg)](http://pkg.julialang.org/?pkg=DiffEqPhysics)
 
+This package provides `HamiltonianProblem`. For `NBodyProblem`, please use package [NBodySimulator](https://github.com/SciML/NBodySimulator.jl)
 
+<!--
 ## Simulation of gravitationally interacting bodies
 
 In order to create bodies/particles for the problem, one needs to use the MassBody structure and its constructor, which accepts mass, initial coordinates and velocity of the body.
@@ -45,3 +47,5 @@ plot_xy_scattering(solution,"./anim_two_boddies_scattering.gif")
 ```
 
 <img src="https://user-images.githubusercontent.com/16945627/39958539-d2cf779c-561d-11e8-96a8-ffc3a595be8b.gif" alt="Here should appear a gif of rotating bodies" width="350"/>
+
+-->
