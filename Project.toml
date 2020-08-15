@@ -1,7 +1,7 @@
 name = "DiffEqPhysics"
 uuid = "055956cb-9e8b-5191-98cc-73ae4a59e68a"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
-version = "3.5.0"
+version = "3.6.0"
 
 [deps]
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
