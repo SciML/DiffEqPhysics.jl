@@ -25,8 +25,8 @@ l = 1.
 params = [g,m,l]
 u0 = [1.0,1.0]
 
-prob = ODEProblem(pendulum, u0, (0., 100.), params)
-sol1 = solve(prob, AutoVern7(Rodas5()), dt = .05)
+prob1 = ODEProblem(pendulum, u0, (0., 100.), params)
+sol1 = solve(prob1, AutoVern7(Rodas5()), dt = .05)
 
 #==========================================================#
 
@@ -34,7 +34,7 @@ sol1 = solve(prob, AutoVern7(Rodas5()), dt = .05)
 
 #Solving the simple pendulum with the DiffEqPhysics.jl HamiltonianProblem()
 #==========================================================#
-function H(θ, ℒ, params)
+function H(ℒ, θ, params)
     g = params[1] #gravitational acceleration
     m = params[2] #mass
     l = params[3] #length
@@ -49,13 +49,13 @@ params = [g,m,l]
 θ₀ = 1.
 ℒ₀ = 1.
 
-prob = HamiltonianProblem(H, θ₀, ℒ₀, (0., 100.), p=params)
-sol2 = solve(prob, SofSpa10(), dt = .05);
+prob2 = HamiltonianProblem(H, ℒ₀, θ₀, (0., 100.), p=params)
+sol2 = solve(prob2, SofSpa10(), dt = .05);
 #==========================================================#
 
 
 #Plotting
 #==========================================================#
 plot(sol1, vars=1, tspan=(0,20), label="ODE Method")
-plot!(sol2.t, sol2[1,:], xlim=(0,20), label="Hamiltonian Method")
+plot!(sol2.t, sol2[2,:], xlim=(0,20), label="Hamiltonian Method")
 #They produce the same solution!
