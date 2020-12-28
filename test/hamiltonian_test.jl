@@ -4,29 +4,42 @@ using StaticArrays, LinearAlgebra, Random
 
 test_solve(prob...) = mapreduce(p->solve(p, VelocityVerlet(), dt=1//2).u, ==, prob)
 
-H(dθ, θ, p) = dθ / 2 - 9.8 * cos(θ)
 p0, q0   = rand(2)
+H(dθ, θ, p) = dθ / 2 - 9.8 * cos(θ)
+dp(dθ, θ, p, t) = - 9.8 * sin(θ)
+dq(dθ, θ, p, t) = 0.5
 acc      = (v, x, p, t) -> ForwardDiff.derivative(x -> -H(v[1], x, p), x[1])
 vel      = (v, x, p, t) -> ForwardDiff.derivative(v -> H(v, x[1], p), v[1])
-prob1    = HamiltonianProblem(H, p0, q0, (0., 10.))
 prob_1   = DynamicalODEProblem(acc, vel, p0, q0, (0., 10.))
-@test test_solve(prob1, prob_1)
 
+@testset "prob1($h)" for h in (H, (dp, dq))
+    prob1    = HamiltonianProblem(h, p0, q0, (0., 10.))
+    @test test_solve(prob1, prob_1)
+end
 
 p0 = @SVector rand(2)
 q0 = @SVector rand(2)
 H(dθ, θ, p) = dθ[1] / 2 + dθ[2] / 2 - 9.8 * cos(θ[1]) - 9.8 * cos(θ[2])
-prob2    = HamiltonianProblem(H, p0, q0, (0., 10.))
+dq(dθ, θ, p, t) = @SVector [0.5, 0.5]
+dp(dθ, θ, p, t) = @SVector [-9.8 * sin(θ[1]), -9.8 * sin(θ[2])]
 acc      = (v, x, p, t) -> ForwardDiff.gradient(x -> -H(v, x, p), x)
 vel      = (v, x, p, t) -> ForwardDiff.gradient(v -> H(v, x, p), v)
 prob_2   = DynamicalODEProblem(acc, vel, p0, q0, (0., 10.))
-@test test_solve(prob2, prob_2)
 
+@testset "prob2($h)" for h in (H, (dp, dq))
+    prob2    = HamiltonianProblem(h, p0, q0, (0., 10.))
+    @test test_solve(prob2, prob_2)
+end
 
 H(dθ, θ, p) = (dθ / 2 - 9.8 * cos.(θ))[1]
 p0, q0 = [rand(5) for i in 1:2]
+dq(dx, dΘ, θ, p, t) = (dx .= [0.5, 0, 0, 0, 0])
+dp(dv, dθ, θ, p, t) = (dv .= [(-9.8 * sin.(θ))[1], 0, 0, 0, 0])
 acc = (dv, v, x, p, t) -> ForwardDiff.gradient!(dv, x -> -H(v, x, p), x)
 vel = (dx, v, x, p, t) -> ForwardDiff.gradient!(dx, v -> H(v, x, p), v)
-prob3  = HamiltonianProblem(H, p0, q0, (0., 10.))
 prob_3 = DynamicalODEProblem(acc, vel, p0, q0, (0., 10.))
-@test test_solve(prob3, prob_3)
+
+@testset "prob3($h)" for h in (H, (dp, dq))
+    prob3  = HamiltonianProblem(h, p0, q0, (0., 10.))
+    @test test_solve(prob3, prob_3)
+end
