@@ -49,11 +49,11 @@ end
 
 function HamiltonianProblem{false}(H, p0, q0, tspan, param=nothing; kwargs...)
     if DiffEqBase.numargs(H) == 4
-        dp(p, q, param, t) = generic_derivative(q0, q -> -H(p, q, param, t), q)
-        dq(p, q, param, t) = generic_derivative(q0, p -> H(p, q, param, t), p)
+        dp = (p, q, param, t) -> generic_derivative(q0, q -> -H(p, q, param, t), q)
+        dq = (p, q, param, t) -> generic_derivative(q0, p -> H(p, q, param, t), p)
     else
-        dp(p, q, param, t) = generic_derivative(q0, q -> -H(p, q, param), q)
-        dq(p, q, param, t) = generic_derivative(q0, p -> H(p, q, param), p)
+        dp = (p, q, param, t) -> generic_derivative(q0, q -> -H(p, q, param), q)
+        dq = (p, q, param, t) -> generic_derivative(q0, p -> H(p, q, param), p)
     end
     return HamiltonianProblem{false}((dp, dq), p0, q0, tspan, param; kwargs...)
 end
@@ -64,11 +64,11 @@ function HamiltonianProblem{true}(H, p0, q0, tspan, param=nothing; kwargs...)
         vfalse = Val(false)
         
         if DiffEqBase.numargs(H) == 4
-            dp(Δp, p, q, param, t) = ForwardDiff.gradient!(Δp, q->-H(p, q, param, t), q, cq, vfalse)
-            dq(Δq, p, q, param, t) = ForwardDiff.gradient!(Δq, p-> H(p, q, param, t), p, cp, vfalse)
+            dp = (Δp, p, q, param, t) -> ForwardDiff.gradient!(Δp, q->-H(p, q, param, t), q, cq, vfalse)
+            dq = (Δq, p, q, param, t) -> ForwardDiff.gradient!(Δq, p-> H(p, q, param, t), p, cp, vfalse)
         else
-            dp(Δp, p, q, param, t) = ForwardDiff.gradient!(Δp, q->-H(p, q, param), q, cq, vfalse)
-            dq(Δq, p, q, param, t) = ForwardDiff.gradient!(Δq, p-> H(p, q, param), p, cp, vfalse)
+            dp = (Δp, p, q, param, t) -> ForwardDiff.gradient!(Δp, q->-H(p, q, param), q, cq, vfalse)
+            dq = (Δq, p, q, param, t) -> ForwardDiff.gradient!(Δq, p-> H(p, q, param), p, cp, vfalse)
         end
         return HamiltonianProblem{true}((dp, dq), p0, q0, tspan, param; kwargs...)
     end
