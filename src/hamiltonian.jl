@@ -22,14 +22,11 @@ AD (`ForwardDiff`).
 
 
 !!! note
-It is assumed, that `H` does not depend on `t`, while `dp` and `dq` do.
-It is possible to convert a time-dependent problem given by `H(p, q, param, t)` into a
-time-independent one
-by adding coordinates `q₀ = t` and `p₀ = E` with the new function
-`H([t,p], [E,q], params) := H(p, q, params, t) + E`. 
+`H` may be defined with or without time as fourth argument. If both methods are defined,
+that with 4 arguments is used.
 """
-function HamiltonianProblem(H, p0::T, q0::T, tspan, param=nothing; kwargs...) where T
-  iip = T <: AbstractArray && !(T <: SArray)
+function HamiltonianProblem(H, p0::S, q0::T, tspan, param=nothing; kwargs...) where {S,T}
+  iip = T <: AbstractArray && !(T <: SArray) && S <: AbstractArray && !(S <: SArray)
   HamiltonianProblem{iip}(H, p0, q0, tspan, param; kwargs...)
 end
 
@@ -51,24 +48,27 @@ function HamiltonianProblem{true}((dp, dq)::Tuple{Any,Any}, p0, q0, tspan, param
 end
 
 function HamiltonianProblem{false}(H, p0, q0, tspan, param=nothing; kwargs...)
-    dp = function (p, q, param, t)
-        generic_derivative(q0, q -> -H(p, q, param), q)
-    end
-    dq = function (p, q, param, t)
-        generic_derivative(q0, p -> H(p, q, param), p)
+    if DiffEqBase.numargs(H) == 4
+        dp(p, q, param, t) = generic_derivative(q0, q -> -H(p, q, param, t), q)
+        dq(p, q, param, t) = generic_derivative(q0, p -> H(p, q, param, t), p)
+    else
+        dp(p, q, param, t) = generic_derivative(q0, q -> -H(p, q, param), q)
+        dq(p, q, param, t) = generic_derivative(q0, p -> H(p, q, param), p)
     end
     return HamiltonianProblem{false}((dp, dq), p0, q0, tspan, param; kwargs...)
 end
 
 function HamiltonianProblem{true}(H, p0, q0, tspan, param=nothing; kwargs...)
-    let cfg = ForwardDiff.GradientConfig(PhysicsTag(), p0), cfg2 = ForwardDiff.GradientConfig(PhysicsTag(), q0)
-        dp = function (Δp, p, q, param, t)
-            fun2 = q -> -H(p, q, param)
-            ForwardDiff.gradient!(Δp, fun2, q, cfg2, Val{false}())
-        end
-        dq = function (Δq, p, q, param, t)
-            fun1 = p-> H(p, q, param)
-            ForwardDiff.gradient!(Δq, fun1, p, cfg, Val{false}())
+    let cp = ForwardDiff.GradientConfig(PhysicsTag(), p0),
+        cq = ForwardDiff.GradientConfig(PhysicsTag(), q0),
+        vfalse = Val(false)
+        
+        if DiffEqBase.numargs(H) == 4
+            dp(Δp, p, q, param, t) = ForwardDiff.gradient!(Δp, q->-H(p, q, param, t), q, cq, vfalse)
+            dq(Δq, p, q, param, t) = ForwardDiff.gradient!(Δq, p-> H(p, q, param, t), p, cp, vfalse)
+        else
+            dp(Δp, p, q, param, t) = ForwardDiff.gradient!(Δp, q->-H(p, q, param), q, cq, vfalse)
+            dq(Δq, p, q, param, t) = ForwardDiff.gradient!(Δq, p-> H(p, q, param), p, cp, vfalse)
         end
         return HamiltonianProblem{true}((dp, dq), p0, q0, tspan, param; kwargs...)
     end
