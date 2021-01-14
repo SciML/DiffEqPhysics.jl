@@ -52,6 +52,7 @@ function HamiltonianProblem{false}(H, p0, q0, tspan, param=nothing; kwargs...)
         dp = (p, q, param, t) -> generic_derivative(q0, q -> -H(p, q, param, t), q)
         dq = (p, q, param, t) -> generic_derivative(q0, p -> H(p, q, param, t), p)
     else
+        issue_depwarn()
         dp = (p, q, param, t) -> generic_derivative(q0, q -> -H(p, q, param), q)
         dq = (p, q, param, t) -> generic_derivative(q0, p -> H(p, q, param), p)
     end
@@ -67,9 +68,15 @@ function HamiltonianProblem{true}(H, p0, q0, tspan, param=nothing; kwargs...)
             dp = (Δp, p, q, param, t) -> ForwardDiff.gradient!(Δp, q->-H(p, q, param, t), q, cq, vfalse)
             dq = (Δq, p, q, param, t) -> ForwardDiff.gradient!(Δq, p-> H(p, q, param, t), p, cp, vfalse)
         else
+            issue_depwarn()
             dp = (Δp, p, q, param, t) -> ForwardDiff.gradient!(Δp, q->-H(p, q, param), q, cq, vfalse)
             dq = (Δq, p, q, param, t) -> ForwardDiff.gradient!(Δq, p-> H(p, q, param), p, cp, vfalse)
         end
         return HamiltonianProblem{true}((dp, dq), p0, q0, tspan, param; kwargs...)
     end
+end
+
+function issue_depwarn()
+    Base.depwarn("Hamiltonians with 3 arguments are deprecated; please use `H(p, q, params, t)`",
+                 :HamiltonianProblem)
 end
