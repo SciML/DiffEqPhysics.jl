@@ -34,7 +34,7 @@ sol1 = solve(prob1, AutoVern7(Rodas5()), dt = .05)
 
 #Solving the simple pendulum with the DiffEqPhysics.jl HamiltonianProblem()
 #==========================================================#
-function H(ℒ, θ, params)
+function H(ℒ, θ, params, t)
     g = params[1] #gravitational acceleration
     m = params[2] #mass
     l = params[3] #length
@@ -49,7 +49,7 @@ params = [g,m,l]
 θ₀ = 1.
 ℒ₀ = 1.
 
-prob2 = HamiltonianProblem(H, ℒ₀, θ₀, (0., 100.), p=params)
+prob2 = HamiltonianProblem(H, ℒ₀, θ₀, (0., 100.), params)
 sol2 = solve(prob2, SofSpa10(), dt = .05);
 #==========================================================#
 
