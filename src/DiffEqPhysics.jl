@@ -5,6 +5,8 @@ using Reexport
 using ForwardDiff, StaticArrays, RecipesBase
 using Random, Printf, LinearAlgebra
 
+using DiffEqBase: NullParameters
+
 include("hamiltonian.jl")
 include("plot.jl")
 
