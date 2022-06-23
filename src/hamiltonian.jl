@@ -25,9 +25,9 @@ AD (`ForwardDiff`).
 `H` may be defined with or without time as fourth argument. If both methods are defined,
 that with 4 arguments is used.
 """
-function HamiltonianProblem(H, p0::S, q0::T, tspan, param=nothing; kwargs...) where {S,T}
-  iip = T <: AbstractArray && !(T <: SArray) && S <: AbstractArray && !(S <: SArray)
-  HamiltonianProblem{iip}(H, p0, q0, tspan, param; kwargs...)
+function HamiltonianProblem(H, p0::S, q0::T, tspan, param = nothing; kwargs...) where {S, T}
+    iip = T <: AbstractArray && !(T <: SArray) && S <: AbstractArray && !(S <: SArray)
+    HamiltonianProblem{iip}(H, p0, q0, tspan, param; kwargs...)
 end
 
 struct PhysicsTag end
@@ -40,14 +40,18 @@ function generic_derivative(q0::Number, hami, x)
     ForwardDiff.derivative(hami, x)
 end
 
-function HamiltonianProblem{false}((dp, dq)::Tuple{Any,Any}, p0, q0, tspan, param=nothing; kwargs...)
-    return ODEProblem(DynamicalODEFunction{false}(dp, dq), ArrayPartition(p0, q0), tspan, param; kwargs...)
+function HamiltonianProblem{false}((dp, dq)::Tuple{Any, Any}, p0, q0, tspan,
+                                   param = nothing; kwargs...)
+    return ODEProblem(DynamicalODEFunction{false}(dp, dq), ArrayPartition(p0, q0), tspan,
+                      param; kwargs...)
 end
-function HamiltonianProblem{true}((dp, dq)::Tuple{Any,Any}, p0, q0, tspan, param=nothing; kwargs...)
-    return ODEProblem(DynamicalODEFunction{true}(dp, dq), ArrayPartition(p0, q0), tspan, param; kwargs...)
+function HamiltonianProblem{true}((dp, dq)::Tuple{Any, Any}, p0, q0, tspan, param = nothing;
+                                  kwargs...)
+    return ODEProblem(DynamicalODEFunction{true}(dp, dq), ArrayPartition(p0, q0), tspan,
+                      param; kwargs...)
 end
 
-function HamiltonianProblem{false}(H, p0, q0, tspan, param=nothing; kwargs...)
+function HamiltonianProblem{false}(H, p0, q0, tspan, param = nothing; kwargs...)
     if DiffEqBase.numargs(H) == 4
         dp = (p, q, param, t) -> generic_derivative(q0, q -> -H(p, q, param, t), q)
         dq = (p, q, param, t) -> generic_derivative(q0, p -> H(p, q, param, t), p)
@@ -59,18 +63,22 @@ function HamiltonianProblem{false}(H, p0, q0, tspan, param=nothing; kwargs...)
     return HamiltonianProblem{false}((dp, dq), p0, q0, tspan, param; kwargs...)
 end
 
-function HamiltonianProblem{true}(H, p0, q0, tspan, param=nothing; kwargs...)
+function HamiltonianProblem{true}(H, p0, q0, tspan, param = nothing; kwargs...)
     let cp = ForwardDiff.GradientConfig(PhysicsTag(), p0),
         cq = ForwardDiff.GradientConfig(PhysicsTag(), q0),
         vfalse = Val(false)
-        
+
         if DiffEqBase.numargs(H) == 4
-            dp = (Δp, p, q, param, t) -> ForwardDiff.gradient!(Δp, q->-H(p, q, param, t), q, cq, vfalse)
-            dq = (Δq, p, q, param, t) -> ForwardDiff.gradient!(Δq, p-> H(p, q, param, t), p, cp, vfalse)
+            dp = (Δp, p, q, param, t) -> ForwardDiff.gradient!(Δp, q -> -H(p, q, param, t),
+                                                               q, cq, vfalse)
+            dq = (Δq, p, q, param, t) -> ForwardDiff.gradient!(Δq, p -> H(p, q, param, t),
+                                                               p, cp, vfalse)
         else
             issue_depwarn()
-            dp = (Δp, p, q, param, t) -> ForwardDiff.gradient!(Δp, q->-H(p, q, param), q, cq, vfalse)
-            dq = (Δq, p, q, param, t) -> ForwardDiff.gradient!(Δq, p-> H(p, q, param), p, cp, vfalse)
+            dp = (Δp, p, q, param, t) -> ForwardDiff.gradient!(Δp, q -> -H(p, q, param), q,
+                                                               cq, vfalse)
+            dq = (Δq, p, q, param, t) -> ForwardDiff.gradient!(Δq, p -> H(p, q, param), p,
+                                                               cp, vfalse)
         end
         return HamiltonianProblem{true}((dp, dq), p0, q0, tspan, param; kwargs...)
     end
