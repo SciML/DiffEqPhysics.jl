@@ -1,7 +1,7 @@
 name = "DiffEqPhysics"
 uuid = "055956cb-9e8b-5191-98cc-73ae4a59e68a"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
-version = "3.9.0"
+version = "3.10.0"
 
 [deps]
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
@@ -13,6 +13,7 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 RecipesBase = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
 RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
+SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [compat]
@@ -22,6 +23,7 @@ ForwardDiff = "0.10"
 RecipesBase = "0.7, 0.8, 1.0"
 RecursiveArrayTools = "1,2"
 Reexport = "0.2, 1.0"
+SciMLBase = "1.73"
 StaticArrays = "0.10, 0.11, 0.12, 1.0"
 julia = "1.6"
 
