@@ -124,7 +124,8 @@ function HamiltonianProblem{false}(H, p0, q0, tspan, param=NullParameters(); kwa
             throw(HamiltonainFunctionArgumentsError(e.fname,e.f))
         end
     end
-    if DiffEqBase.numargs(H) == 4
+
+    if 4 in DiffEqBase.numargs(H)
         dp = (p, q, param, t) -> generic_derivative(q0, q -> -H(p, q, param, t), q)
         dq = (p, q, param, t) -> generic_derivative(q0, p -> H(p, q, param, t), p)
     else
@@ -151,7 +152,7 @@ function HamiltonianProblem{true}(H, p0, q0, tspan, param=NullParameters(); kwar
         cq = ForwardDiff.GradientConfig(PhysicsTag(), q0),
         vfalse = Val(false)
 
-        if DiffEqBase.numargs(H) == 4
+        if 4 in DiffEqBase.numargs(H)
             dp = (Δp, p, q, param, t) -> ForwardDiff.gradient!(Δp, q->-H(p, q, param, t), q, cq, vfalse)
             dq = (Δq, p, q, param, t) -> ForwardDiff.gradient!(Δq, p-> H(p, q, param, t), p, cp, vfalse)
         else
