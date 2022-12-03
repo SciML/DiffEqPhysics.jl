@@ -1,3 +1,68 @@
+const TOO_MANY_ARGUMENTS_ERROR_MESSAGE = """
+                                         All methods for the model function `H` had too many arguments. A
+                                         Hamiltonian `H` must define either `H(p, q, param)` or `H(p, q, param, t)`. This error
+                                         can be thrown if you define an Hamiltonian for example as `H(p, q, param1, param2, t)`.
+                                         For more information on the required number of arguments for the function
+                                         you were defining, consult the documentation for the `HamiltonianProblem`.
+                                         """
+
+struct HamiltonainTooManyArgumentsError <: Exception
+    fname::String
+    f::Any
+end
+
+function Base.showerror(io::IO, e::HamiltonainTooManyArgumentsError)
+    println(io, TOO_MANY_ARGUMENTS_ERROR_MESSAGE)
+    print(io, "Offending function: ")
+    printstyled(io, e.fname; bold = true, color = :red)
+    println(io, "\nMethods:")
+    println(io, methods(e.f))
+end
+
+const TOO_FEW_ARGUMENTS_ERROR_MESSAGE = """
+                                        All methods for the Hamiltonian `H` had too few arguments. A
+                                        Hamiltonian `H` must define either `H(p, q, param)` or `H(p, q, param, t)`. This error
+                                        can be thrown if you define an Hamiltonian for example as `H(p, q)`.
+                                        Note that `param` must be in the arguments list even if it's not used.
+                                        For more information on the required number of arguments for the function
+                                        you were defining, consult the documentation for the `HamiltonianProblem`.
+                                        """
+
+struct HamiltonainTooFewArgumentsError <: Exception
+    fname::String
+    f::Any
+end
+
+function Base.showerror(io::IO, e::HamiltonainTooFewArgumentsError)
+    println(io, TOO_FEW_ARGUMENTS_ERROR_MESSAGE)
+    print(io, "Offending function: ")
+    printstyled(io, e.fname; bold = true, color = :red)
+    println(io, "\nMethods:")
+    println(io, methods(e.f))
+end
+
+const ARGUMENTS_ERROR_MESSAGE = """
+                                Methods dispatches for the Hamiltonian `H` do not match the required number.
+                                A Hamiltonian `H` must define either `H(p, q, param)` or `H(p, q, param, t)`. This error
+                                can be thrown if you define an Hamiltonian for example as `H(p)`.
+                                Note that arguments must be in the arguments list even if it's not used.
+                                For more information on the required number of arguments for the function
+                                you were defining, consult the documentation for the `HamiltonianProblem`.
+                                """
+
+struct HamiltonainFunctionArgumentsError <: Exception
+    fname::String
+    f::Any
+end
+
+function Base.showerror(io::IO, e::HamiltonainFunctionArgumentsError)
+    println(io, ARGUMENTS_ERROR_MESSAGE)
+    print(io, "Offending function: ")
+    printstyled(io, e.fname; bold = true, color = :red)
+    println(io, "\nMethods:")
+    println(io, methods(e.f))
+end
+
 struct HamiltonianProblem{iip} <: DiffEqBase.AbstractDynamicalODEProblem end
 
 """
@@ -48,7 +113,19 @@ function HamiltonianProblem{true}((dp, dq)::Tuple{Any,Any}, p0, q0, tspan, param
 end
 
 function HamiltonianProblem{false}(H, p0, q0, tspan, param=NullParameters(); kwargs...)
-    if DiffEqBase.numargs(H) == 4
+    try
+        isinplace(H, 4)
+    catch e
+        if e isa SciMLBase.TooManyArgumentsError
+            throw(HamiltonainTooManyArgumentsError(e.fname,e.f))
+        elseif e isa SciMLBase.TooFewArgumentsError
+            throw(HamiltonainTooFewArgumentsError(e.fname,e.f))
+        elseif e isa SciMLBase.FunctionArgumentsError
+            throw(HamiltonainFunctionArgumentsError(e.fname,e.f))
+        end
+    end
+
+    if 4 in DiffEqBase.numargs(H)
         dp = (p, q, param, t) -> generic_derivative(q0, q -> -H(p, q, param, t), q)
         dq = (p, q, param, t) -> generic_derivative(q0, p -> H(p, q, param, t), p)
     else
@@ -60,11 +137,22 @@ function HamiltonianProblem{false}(H, p0, q0, tspan, param=NullParameters(); kwa
 end
 
 function HamiltonianProblem{true}(H, p0, q0, tspan, param=NullParameters(); kwargs...)
+    try
+        isinplace(H, 4)
+    catch e
+        if e isa SciMLBase.TooManyArgumentsError
+            throw(HamiltonainTooManyArgumentsError(e.fname,e.f))
+        elseif e isa SciMLBase.TooFewArgumentsError
+            throw(HamiltonainTooFewArgumentsError(e.fname,e.f))
+        elseif e isa SciMLBase.FunctionArgumentsError
+            throw(HamiltonainFunctionArgumentsError(e.fname,e.f))
+        end
+    end
     let cp = ForwardDiff.GradientConfig(PhysicsTag(), p0),
         cq = ForwardDiff.GradientConfig(PhysicsTag(), q0),
         vfalse = Val(false)
-        
-        if DiffEqBase.numargs(H) == 4
+
+        if 4 in DiffEqBase.numargs(H)
             dp = (Δp, p, q, param, t) -> ForwardDiff.gradient!(Δp, q->-H(p, q, param, t), q, cq, vfalse)
             dq = (Δq, p, q, param, t) -> ForwardDiff.gradient!(Δq, p-> H(p, q, param, t), p, cp, vfalse)
         else
