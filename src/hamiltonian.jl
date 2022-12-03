@@ -90,7 +90,7 @@ AD (`ForwardDiff`).
 `H` may be defined with or without time as fourth argument. If both methods are defined,
 that with 4 arguments is used.
 """
-function HamiltonianProblem(H, p0::S, q0::T, tspan, param=nothing; kwargs...) where {S,T}
+function HamiltonianProblem(H, p0::S, q0::T, tspan, param=NullParameters(); kwargs...) where {S,T}
   iip = T <: AbstractArray && !(T <: SArray) && S <: AbstractArray && !(S <: SArray)
   HamiltonianProblem{iip}(H, p0, q0, tspan, param; kwargs...)
 end
@@ -105,14 +105,14 @@ function generic_derivative(q0::Number, hami, x)
     ForwardDiff.derivative(hami, x)
 end
 
-function HamiltonianProblem{false}((dp, dq)::Tuple{Any,Any}, p0, q0, tspan, param=nothing; kwargs...)
+function HamiltonianProblem{false}((dp, dq)::Tuple{Any,Any}, p0, q0, tspan, param=NullParameters(); kwargs...)
     return ODEProblem(DynamicalODEFunction{false}(dp, dq), ArrayPartition(p0, q0), tspan, param; kwargs...)
 end
-function HamiltonianProblem{true}((dp, dq)::Tuple{Any,Any}, p0, q0, tspan, param=nothing; kwargs...)
+function HamiltonianProblem{true}((dp, dq)::Tuple{Any,Any}, p0, q0, tspan, param=NullParameters(); kwargs...)
     return ODEProblem(DynamicalODEFunction{true}(dp, dq), ArrayPartition(p0, q0), tspan, param; kwargs...)
 end
 
-function HamiltonianProblem{false}(H, p0, q0, tspan, param=nothing; kwargs...)
+function HamiltonianProblem{false}(H, p0, q0, tspan, param=NullParameters(); kwargs...)
     try
         isinplace(H, 4)
     catch e
@@ -124,7 +124,6 @@ function HamiltonianProblem{false}(H, p0, q0, tspan, param=nothing; kwargs...)
             throw(HamiltonainFunctionArgumentsError(e.fname,e.f))
         end
     end
-
     if DiffEqBase.numargs(H) == 4
         dp = (p, q, param, t) -> generic_derivative(q0, q -> -H(p, q, param, t), q)
         dq = (p, q, param, t) -> generic_derivative(q0, p -> H(p, q, param, t), p)
@@ -136,7 +135,7 @@ function HamiltonianProblem{false}(H, p0, q0, tspan, param=nothing; kwargs...)
     return HamiltonianProblem{false}((dp, dq), p0, q0, tspan, param; kwargs...)
 end
 
-function HamiltonianProblem{true}(H, p0, q0, tspan, param=nothing; kwargs...)
+function HamiltonianProblem{true}(H, p0, q0, tspan, param=NullParameters(); kwargs...)
     try
         isinplace(H, 4)
     catch e
@@ -148,7 +147,6 @@ function HamiltonianProblem{true}(H, p0, q0, tspan, param=nothing; kwargs...)
             throw(HamiltonainFunctionArgumentsError(e.fname,e.f))
         end
     end
-
     let cp = ForwardDiff.GradientConfig(PhysicsTag(), p0),
         cq = ForwardDiff.GradientConfig(PhysicsTag(), q0),
         vfalse = Val(false)
