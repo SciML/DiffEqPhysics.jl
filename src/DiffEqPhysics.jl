@@ -2,7 +2,7 @@ module DiffEqPhysics
 
 using Reexport
 @reexport using DiffEqBase, RecursiveArrayTools
-using ForwardDiff, StaticArrays, RecipesBase
+using ForwardDiff, StaticArraysCore, RecipesBase
 using Random, Printf, LinearAlgebra
 
 using DiffEqBase: NullParameters

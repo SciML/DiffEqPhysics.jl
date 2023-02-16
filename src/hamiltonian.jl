@@ -91,7 +91,7 @@ AD (`ForwardDiff`).
 that with 4 arguments is used.
 """
 function HamiltonianProblem(H, p0::S, q0::T, tspan, param=NullParameters(); kwargs...) where {S,T}
-  iip = T <: AbstractArray && !(T <: SArray) && S <: AbstractArray && !(S <: SArray)
+  iip = T <: AbstractArray && !(T <: StaticArraysCore.SArray) && S <: AbstractArray && !(S <: StaticArraysCore.SArray)
   HamiltonianProblem{iip}(H, p0, q0, tspan, param; kwargs...)
 end
 
