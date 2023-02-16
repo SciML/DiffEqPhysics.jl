@@ -14,7 +14,7 @@ RecipesBase = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
 RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
-StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+StaticArraysCore = "1e83bf80-4336-4d27-bf5d-d5a4f845583c"
 
 [compat]
 DiffEqBase = "6"
@@ -24,13 +24,14 @@ RecipesBase = "0.7, 0.8, 1.0"
 RecursiveArrayTools = "1,2"
 Reexport = "0.2, 1.0"
 SciMLBase = "1.73"
-StaticArrays = "0.10, 0.11, 0.12, 1.0"
+StaticArraysCore = "1.4"
 julia = "1.6"
 
 [extras]
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test", "OrdinaryDiffEq", "SafeTestsets"]
+test = ["Test", "OrdinaryDiffEq", "SafeTestsets", "StaticArrays"]
