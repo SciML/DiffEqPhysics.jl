@@ -74,7 +74,7 @@ params = [l1, l2, m1, m2, g]
 q0 = [1.0,1.0]
 p0 = [1.0,1.0]
 times = (0.,25.)
-prob = HamiltonianProblem(H, q0, p0, times, params)
+prob = HamiltonianProblem(H, p0, q0, times, params)
 sol2 = solve(prob, SofSpa10(), dt = .05)
 
 plot(sol2, vars=1, xlim=(0,20), label="Momentum1")
