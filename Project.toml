@@ -18,7 +18,7 @@ StaticArraysCore = "1e83bf80-4336-4d27-bf5d-d5a4f845583c"
 
 [compat]
 DiffEqBase = "6"
-DiffEqCallbacks = "2.9"
+DiffEqCallbacks = "2.9, 3"
 ForwardDiff = "0.10"
 RecipesBase = "0.7, 0.8, 1.0"
 RecursiveArrayTools = "1,2"
