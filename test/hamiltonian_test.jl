@@ -5,11 +5,11 @@ using StaticArrays, LinearAlgebra, Random
 test_solve(prob...) = mapreduce(p->solve(p, Tsit5(), dt=1//2).u, ==, prob)
 
 p0, q0   = rand(2)
-H(dθ, θ, p) = dθ / 2 - 9.8 * cos(θ)
+H(dθ, θ, p, t) = dθ / 2 - 9.8 * cos(θ)
 dp(dθ, θ, p, t) = - 9.8 * sin(θ)
 dq(dθ, θ, p, t) = 0.5
-acc      = (v, x, p, t) -> ForwardDiff.derivative(x -> -H(v[1], x, p), x[1])
-vel      = (v, x, p, t) -> ForwardDiff.derivative(v -> H(v, x[1], p), v[1])
+acc      = (v, x, p, t) -> ForwardDiff.derivative(x -> -H(v[1], x, p, t), x[1])
+vel      = (v, x, p, t) -> ForwardDiff.derivative(v -> H(v, x[1], p, t), v[1])
 prob_1   = DynamicalODEProblem(acc, vel, p0, q0, (0., 10.))
 
 @testset "prob1($h)" for h in (H, (dp, dq))
