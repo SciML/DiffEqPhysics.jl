@@ -35,8 +35,8 @@ H(dθ, θ, p, t) = (dθ / 2 - 9.8 * cos.(θ))[1]
 p0, q0 = [rand(5) for i in 1:2]
 dq(dx, dΘ, θ, p, t) = (dx .= [0.5, 0, 0, 0, 0])
 dp(dv, dθ, θ, p, t) = (dv .= [(-9.8 * sin.(θ))[1], 0, 0, 0, 0])
-acc = (dv, v, x, p, t) -> ForwardDiff.gradient!(dv, x -> -H(v, x, p), x)
-vel = (dx, v, x, p, t) -> ForwardDiff.gradient!(dx, v -> H(v, x, p), v)
+acc = (dv, v, x, p, t) -> ForwardDiff.gradient!(dv, x -> -H(v, x, p, t), x)
+vel = (dx, v, x, p, t) -> ForwardDiff.gradient!(dx, v -> H(v, x, p, t), v)
 prob_3 = DynamicalODEProblem(acc, vel, p0, q0, (0., 10.))
 
 @testset "prob3($h)" for h in (H, (dp, dq))
