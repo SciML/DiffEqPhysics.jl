@@ -31,7 +31,7 @@ prob_2   = DynamicalODEProblem(acc, vel, p0, q0, (0., 10.))
     @test test_solve(prob2, prob_2)
 end
 
-H(dθ, θ, p) = (dθ / 2 - 9.8 * cos.(θ))[1]
+H(dθ, θ, p, t) = (dθ / 2 - 9.8 * cos.(θ))[1]
 p0, q0 = [rand(5) for i in 1:2]
 dq(dx, dΘ, θ, p, t) = (dx .= [0.5, 0, 0, 0, 0])
 dp(dv, dθ, θ, p, t) = (dv .= [(-9.8 * sin.(θ))[1], 0, 0, 0, 0])
