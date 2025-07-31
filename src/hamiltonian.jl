@@ -85,14 +85,17 @@ in the latter case the partial derivatives use mutating signatures
 If the Hamiltonian function is given, `dp` and `dq` are calculated automatically using
 AD (`ForwardDiff`).
 
-
 !!! note
+
+
 `H` may be defined with or without time as fourth argument. If both methods are defined,
 that with 4 arguments is used.
 """
-function HamiltonianProblem(H, p0::S, q0::T, tspan, param=NullParameters(); kwargs...) where {S,T}
-  iip = T <: AbstractArray && !(T <: StaticArraysCore.SArray) && S <: AbstractArray && !(S <: StaticArraysCore.SArray)
-  HamiltonianProblem{iip}(H, p0, q0, tspan, param; kwargs...)
+function HamiltonianProblem(
+        H, p0::S, q0::T, tspan, param = NullParameters(); kwargs...) where {S, T}
+    iip = T <: AbstractArray && !(T <: StaticArraysCore.SArray) && S <: AbstractArray &&
+          !(S <: StaticArraysCore.SArray)
+    HamiltonianProblem{iip}(H, p0, q0, tspan, param; kwargs...)
 end
 
 struct PhysicsTag end
@@ -105,23 +108,27 @@ function generic_derivative(q0::Number, hami, x)
     ForwardDiff.derivative(hami, x)
 end
 
-function HamiltonianProblem{false}((dp, dq)::Tuple{Any,Any}, p0, q0, tspan, param=NullParameters(); kwargs...)
-    return ODEProblem(DynamicalODEFunction{false}(dp, dq), ArrayPartition(p0, q0), tspan, param; kwargs...)
+function HamiltonianProblem{false}(
+        (dp, dq)::Tuple{Any, Any}, p0, q0, tspan, param = NullParameters(); kwargs...)
+    return ODEProblem(DynamicalODEFunction{false}(dp, dq),
+        ArrayPartition(p0, q0), tspan, param; kwargs...)
 end
-function HamiltonianProblem{true}((dp, dq)::Tuple{Any,Any}, p0, q0, tspan, param=NullParameters(); kwargs...)
-    return ODEProblem(DynamicalODEFunction{true}(dp, dq), ArrayPartition(p0, q0), tspan, param; kwargs...)
+function HamiltonianProblem{true}(
+        (dp, dq)::Tuple{Any, Any}, p0, q0, tspan, param = NullParameters(); kwargs...)
+    return ODEProblem(
+        DynamicalODEFunction{true}(dp, dq), ArrayPartition(p0, q0), tspan, param; kwargs...)
 end
 
-function HamiltonianProblem{false}(H, p0, q0, tspan, param=NullParameters(); kwargs...)
+function HamiltonianProblem{false}(H, p0, q0, tspan, param = NullParameters(); kwargs...)
     try
         isinplace(H, 4)
     catch e
         if e isa SciMLBase.TooManyArgumentsError
-            throw(HamiltonainTooManyArgumentsError(e.fname,e.f))
+            throw(HamiltonainTooManyArgumentsError(e.fname, e.f))
         elseif e isa SciMLBase.TooFewArgumentsError
-            throw(HamiltonainTooFewArgumentsError(e.fname,e.f))
+            throw(HamiltonainTooFewArgumentsError(e.fname, e.f))
         elseif e isa SciMLBase.FunctionArgumentsError
-            throw(HamiltonainFunctionArgumentsError(e.fname,e.f))
+            throw(HamiltonainFunctionArgumentsError(e.fname, e.f))
         end
     end
 
@@ -136,35 +143,39 @@ function HamiltonianProblem{false}(H, p0, q0, tspan, param=NullParameters(); kwa
     return HamiltonianProblem{false}((dp, dq), p0, q0, tspan, param; kwargs...)
 end
 
-function HamiltonianProblem{true}(H, p0, q0, tspan, param=NullParameters(); kwargs...)
+function HamiltonianProblem{true}(H, p0, q0, tspan, param = NullParameters(); kwargs...)
     try
         isinplace(H, 4)
     catch e
         if e isa SciMLBase.TooManyArgumentsError
-            throw(HamiltonainTooManyArgumentsError(e.fname,e.f))
+            throw(HamiltonainTooManyArgumentsError(e.fname, e.f))
         elseif e isa SciMLBase.TooFewArgumentsError
-            throw(HamiltonainTooFewArgumentsError(e.fname,e.f))
+            throw(HamiltonainTooFewArgumentsError(e.fname, e.f))
         elseif e isa SciMLBase.FunctionArgumentsError
-            throw(HamiltonainFunctionArgumentsError(e.fname,e.f))
+            throw(HamiltonainFunctionArgumentsError(e.fname, e.f))
         end
     end
     let cp = ForwardDiff.GradientConfig(PhysicsTag(), p0),
-        cq = ForwardDiff.GradientConfig(PhysicsTag(), q0),
-        vfalse = Val(false)
+        cq = ForwardDiff.GradientConfig(PhysicsTag(), q0), vfalse = Val(false)
 
         if 4 in DiffEqBase.numargs(H)
-            dp = (Δp, p, q, param, t) -> ForwardDiff.gradient!(Δp, q->-H(p, q, param, t), q, cq, vfalse)
-            dq = (Δq, p, q, param, t) -> ForwardDiff.gradient!(Δq, p-> H(p, q, param, t), p, cp, vfalse)
+            dp = (Δp, p, q, param,
+                t) -> ForwardDiff.gradient!(Δp, q->-H(p, q, param, t), q, cq, vfalse)
+            dq = (Δq, p, q, param,
+                t) -> ForwardDiff.gradient!(Δq, p -> H(p, q, param, t), p, cp, vfalse)
         else
             issue_depwarn()
-            dp = (Δp, p, q, param, t) -> ForwardDiff.gradient!(Δp, q->-H(p, q, param), q, cq, vfalse)
-            dq = (Δq, p, q, param, t) -> ForwardDiff.gradient!(Δq, p-> H(p, q, param), p, cp, vfalse)
+            dp = (Δp, p, q, param,
+                t) -> ForwardDiff.gradient!(Δp, q->-H(p, q, param), q, cq, vfalse)
+            dq = (Δq, p, q, param,
+                t) -> ForwardDiff.gradient!(Δq, p -> H(p, q, param), p, cp, vfalse)
         end
         return HamiltonianProblem{true}((dp, dq), p0, q0, tspan, param; kwargs...)
     end
 end
 
 function issue_depwarn()
-    Base.depwarn("Hamiltonians with 3 arguments are deprecated; please use `H(p, q, params, t)`",
-                 :HamiltonianProblem)
+    Base.depwarn(
+        "Hamiltonians with 3 arguments are deprecated; please use `H(p, q, params, t)`",
+        :HamiltonianProblem)
 end
