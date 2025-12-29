@@ -1,47 +1,67 @@
 # DiffEqPhysics
 
-[![Join the chat at https://gitter.im/JuliaDiffEq/Lobby](https://badges.gitter.im/JuliaDiffEq/Lobby.svg)](https://gitter.im/JuliaDiffEq/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Join the chat at https://julialang.zulipchat.com](https://img.shields.io/badge/chat-on%20zulip-blue)](https://julialang.zulipchat.com)
 [![Build Status](https://github.com/SciML/DiffEqPhysics.jl/workflows/CI/badge.svg)](https://github.com/SciML/DiffEqPhysics.jl/actions?query=workflow%3ACI)
 
-This package provides `HamiltonianProblem`. For `NBodyProblem`, please use package [NBodySimulator](https://github.com/SciML/NBodySimulator.jl)
+DiffEqPhysics.jl provides physics-based problem types for the [SciML](https://sciml.ai) ecosystem. The main feature is `HamiltonianProblem`, which allows you to define and solve Hamiltonian systems using automatic differentiation.
 
-<!--
-## Simulation of gravitationally interacting bodies
+For N-body gravitational simulations, please use [NBodySimulator.jl](https://github.com/SciML/NBodySimulator.jl).
 
-In order to create bodies/particles for the problem, one needs to use the MassBody structure and its constructor, which accepts mass, initial coordinates and velocity of the body.
-
-```julia
-body1 = MassBody(2.0, SVector(0.0, 1.0, 0.0), SVector( 5.775e-6, 0.0, 0.0))
-body2 = MassBody(2.0, SVector(0.0,-1.0, 0.0), SVector(-5.775e-6, 0.0, 0.0))
-```
-
-Usually we solve an n-body problem for a certain period of time:
+## Installation
 
 ```julia
-tspan = (0.0, 1111150.0);
+using Pkg
+Pkg.add("DiffEqPhysics")
 ```
 
-Solving gravitational problem one needs to specify the gravitational constant G.
-```julia
-G = 6.673e-11
-```
+## Quick Start: Simple Pendulum
 
-In fact, now we have enough parameters to create an NBodyGravProblem object:
+Define a Hamiltonian system by specifying the Hamiltonian function `H(p, q, params, t)`:
 
 ```julia
-problem = NBodyGravProblem([body1,body2], G, tspan)
+using DiffEqPhysics, OrdinaryDiffEq
+
+# Hamiltonian for a simple pendulum: H = p²/(2ml²) + mgl(1 - cos(q))
+function H(p, q, params, t)
+    g, m, l = params
+    return p^2 / (2 * m * l^2) + m * g * l * (1 - cos(q))
+end
+
+# Parameters: gravitational acceleration, mass, length
+params = (9.81, 1.0, 1.0)
+
+# Initial conditions: momentum p₀ and angle q₀
+p₀ = 0.0
+q₀ = π/4  # 45 degrees
+
+# Create and solve the Hamiltonian problem
+prob = HamiltonianProblem(H, p₀, q₀, (0.0, 10.0), params)
+sol = solve(prob, SofSpa10(), dt=0.01)
 ```
 
-Solution to the problem might be evaluated using the standard `solve` function:
+The equations of motion `q̇ = ∂H/∂p` and `ṗ = -∂H/∂q` are automatically computed using ForwardDiff.jl.
+
+## Features
+
+- **Automatic differentiation**: Derivatives are computed automatically from the Hamiltonian function
+- **Multiple input types**: Works with scalars, `StaticArrays`, or regular `AbstractArrays`
+- **Symplectic solvers**: Use symplectic integrators from OrdinaryDiffEq.jl (like `SofSpa10`) to preserve the Hamiltonian structure
+- **Manual derivatives**: Optionally provide your own derivative functions `(dp, dq)` for better performance
+
+## Providing Manual Derivatives
+
+For better performance, you can provide the derivative functions directly:
+
 ```julia
-solution = solve(problem, Tsit5());
+# dp = -∂H/∂q, dq = ∂H/∂p
+dp(p, q, params, t) = -params[1] * params[2] * params[3] * sin(q)  # -mgl*sin(q)
+dq(p, q, params, t) = p / (params[2] * params[3]^2)                # p/(ml²)
+
+prob = HamiltonianProblem((dp, dq), p₀, q₀, (0.0, 10.0), params)
 ```
 
-And, finally, we plot our solution showing two equal bodies rotating on the same orbit:
-```julia
-plot_xy_scattering(solution,"./anim_two_boddies_scattering.gif")
-```
+## Examples
 
-<img src="https://user-images.githubusercontent.com/16945627/39958539-d2cf779c-561d-11e8-96a8-ffc3a595be8b.gif" alt="Here should appear a gif of rotating bodies" width="350"/>
-
--->
+See the `examples/` folder for more detailed examples:
+- `pendulum.jl`: Simple pendulum comparison with traditional ODE methods
+- `double_pendulum.jl`: Double pendulum with animation
