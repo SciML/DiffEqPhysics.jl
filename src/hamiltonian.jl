@@ -63,7 +63,7 @@ function Base.showerror(io::IO, e::HamiltonainFunctionArgumentsError)
     println(io, methods(e.f))
 end
 
-struct HamiltonianProblem{iip} <: DiffEqBase.AbstractDynamicalODEProblem end
+struct HamiltonianProblem{iip} <: AbstractDynamicalODEProblem end
 
 """
     HamiltonianProblem(H, p0, q0, tspan, param=nothing; kwargs...)
@@ -123,16 +123,16 @@ function HamiltonianProblem{false}(H, p0, q0, tspan, param = NullParameters(); k
     try
         isinplace(H, 4)
     catch e
-        if e isa SciMLBase.TooManyArgumentsError
+        if e isa TooManyArgumentsError
             throw(HamiltonainTooManyArgumentsError(e.fname, e.f))
-        elseif e isa SciMLBase.TooFewArgumentsError
+        elseif e isa TooFewArgumentsError
             throw(HamiltonainTooFewArgumentsError(e.fname, e.f))
-        elseif e isa SciMLBase.FunctionArgumentsError
+        elseif e isa FunctionArgumentsError
             throw(HamiltonainFunctionArgumentsError(e.fname, e.f))
         end
     end
 
-    if 4 in DiffEqBase.numargs(H)
+    if 4 in numargs(H)
         dp = (p, q, param, t) -> generic_derivative(q0, q -> -H(p, q, param, t), q)
         dq = (p, q, param, t) -> generic_derivative(q0, p -> H(p, q, param, t), p)
     else
@@ -147,18 +147,18 @@ function HamiltonianProblem{true}(H, p0, q0, tspan, param = NullParameters(); kw
     try
         isinplace(H, 4)
     catch e
-        if e isa SciMLBase.TooManyArgumentsError
+        if e isa TooManyArgumentsError
             throw(HamiltonainTooManyArgumentsError(e.fname, e.f))
-        elseif e isa SciMLBase.TooFewArgumentsError
+        elseif e isa TooFewArgumentsError
             throw(HamiltonainTooFewArgumentsError(e.fname, e.f))
-        elseif e isa SciMLBase.FunctionArgumentsError
+        elseif e isa FunctionArgumentsError
             throw(HamiltonainFunctionArgumentsError(e.fname, e.f))
         end
     end
     let cp = ForwardDiff.GradientConfig(PhysicsTag(), p0),
         cq = ForwardDiff.GradientConfig(PhysicsTag(), q0), vfalse = Val(false)
 
-        if 4 in DiffEqBase.numargs(H)
+        if 4 in numargs(H)
             dp = (Δp, p, q, param,
                 t) -> ForwardDiff.gradient!(Δp, q->-H(p, q, param, t), q, cq, vfalse)
             dq = (Δq, p, q, param,

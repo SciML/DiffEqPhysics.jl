@@ -6,3 +6,7 @@ using SafeTestsets, Test
     include("hamiltonian_test.jl")
 end
 #@safetestset "N-Body Test" begin include("nbody_test.jl") end
+
+@safetestset "Explicit Imports" begin
+    include("explicit_imports.jl")
+end
