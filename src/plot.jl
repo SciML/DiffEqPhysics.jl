@@ -1,3 +1,6 @@
+"""
+Internal type for orbit plotting recipe.
+"""
 struct OrbitPlot
     sol::Any
     body_names::Any
@@ -21,12 +24,42 @@ end
     end
 end
 
+"""
+    orbitplot(sol; body_names=nothing, dim=3, kwargs...)
+
+Plot the orbits from an N-body simulation solution using Plots.jl recipes.
+
+# Arguments
+- `sol`: A `DESolution` from solving an N-body problem
+- `body_names`: Optional vector of names for each body (defaults to "orbit 1", "orbit 2", etc.)
+- `dim`: Dimension of the plot, either `2` or `3` (default: `3`)
+- `kwargs...`: Additional keyword arguments passed to the plot recipe
+
+# Returns
+A plot object showing the trajectories of all bodies.
+"""
 function orbitplot(sol::DESolution; body_names = nothing, dim = 3, kwargs...)
     RecipesBase.plot(OrbitPlot(sol, body_names, dim); kwargs...)
 end
 
 export orbitplot
 
+"""
+    plot_orbits(sol; body_names=nothing, dim=3, kwargs...)
+
+Plot the orbits from an N-body simulation solution.
+
+# Arguments
+- `sol`: A solution from solving an N-body problem
+- `body_names`: Optional vector of names for each body (defaults to "orbit 1", "orbit 2", etc.)
+- `dim`: Dimension of the plot, either `2` or `3` (default: `3`)
+- `kwargs...`: Additional keyword arguments passed to `plot`
+
+# Returns
+A plot object showing the trajectories of all bodies.
+
+See also: [`orbitplot`](@ref)
+"""
 function plot_orbits(sol; body_names = nothing, dim = 3, kwargs...)
     @assert dim ∈ (2, 3)
     N = length(sol.u[1].x[1].x[1])

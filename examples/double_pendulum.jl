@@ -49,7 +49,7 @@ plot!(sol1, vars = 4, xlim = (0, 20), label = "theta2")#========================
 
 #Now with HamiltonianProblem()
 
-function H(p, θ, params)
+function H(p, θ, params, t)
     l1 = params[1]
     l2 = params[2]
     m1 = params[3]
