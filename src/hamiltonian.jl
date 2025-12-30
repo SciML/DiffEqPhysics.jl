@@ -6,12 +6,12 @@ const TOO_MANY_ARGUMENTS_ERROR_MESSAGE = """
                                          you were defining, consult the documentation for the `HamiltonianProblem`.
                                          """
 
-struct HamiltonainTooManyArgumentsError <: Exception
+struct HamiltonianTooManyArgumentsError <: Exception
     fname::String
     f::Any
 end
 
-function Base.showerror(io::IO, e::HamiltonainTooManyArgumentsError)
+function Base.showerror(io::IO, e::HamiltonianTooManyArgumentsError)
     println(io, TOO_MANY_ARGUMENTS_ERROR_MESSAGE)
     print(io, "Offending function: ")
     printstyled(io, e.fname; bold = true, color = :red)
@@ -28,12 +28,12 @@ const TOO_FEW_ARGUMENTS_ERROR_MESSAGE = """
                                         you were defining, consult the documentation for the `HamiltonianProblem`.
                                         """
 
-struct HamiltonainTooFewArgumentsError <: Exception
+struct HamiltonianTooFewArgumentsError <: Exception
     fname::String
     f::Any
 end
 
-function Base.showerror(io::IO, e::HamiltonainTooFewArgumentsError)
+function Base.showerror(io::IO, e::HamiltonianTooFewArgumentsError)
     println(io, TOO_FEW_ARGUMENTS_ERROR_MESSAGE)
     print(io, "Offending function: ")
     printstyled(io, e.fname; bold = true, color = :red)
@@ -50,12 +50,12 @@ const ARGUMENTS_ERROR_MESSAGE = """
                                 you were defining, consult the documentation for the `HamiltonianProblem`.
                                 """
 
-struct HamiltonainFunctionArgumentsError <: Exception
+struct HamiltonianFunctionArgumentsError <: Exception
     fname::String
     f::Any
 end
 
-function Base.showerror(io::IO, e::HamiltonainFunctionArgumentsError)
+function Base.showerror(io::IO, e::HamiltonianFunctionArgumentsError)
     println(io, ARGUMENTS_ERROR_MESSAGE)
     print(io, "Offending function: ")
     printstyled(io, e.fname; bold = true, color = :red)
@@ -69,27 +69,26 @@ struct HamiltonianProblem{iip} <: AbstractDynamicalODEProblem end
     HamiltonianProblem(H, p0, q0, tspan, param=nothing; kwargs...)
     HamiltonianProblem((dp, dq), p0, q0, tspan, param=nothing; kwargs...)
 
-Define a physical system by its Hamiltonian function `H(p, q, param)` or the function pair
+Define a physical system by its Hamiltonian function `H(p, q, param, t)` or the function pair
 `dp = -∂H/∂q` and `dq = ∂H/∂p`.
 
 The equations of motion are then given by `q̇ = ∂H/∂p = dq` and `ṗ  = -∂H/∂q = dp`.
 
-The initial values for canonical impulses `p0` and coordinates `q0` may be scalars, `SArray`s or
-other `AbstractArray`s. Their type determines the type of functions `dp` and `dq`.
+The initial values for canonical momenta `p0` and coordinates `q0` may be scalars, `SArray`s, or
+other `AbstractArray`s. Their type determines whether the problem uses in-place or out-of-place
+operations.
 
-In the first two cases the derivative functions require the signatures
-`dp(p, q, param, t)` and `dq(p, q, param, t)` while
-in the latter case the partial derivatives use mutating signatures
-`dp!(Δp, p, q, param, t)` and `dq!(Δq, p, q, param, t)` with predefined arrays `Δp` and `Δq`.
+- For scalars and `SArray`s, the derivative functions use the signatures `dp(p, q, param, t)` and
+  `dq(p, q, param, t)`.
+- For regular `AbstractArray`s, the partial derivatives use mutating signatures
+  `dp!(Δp, p, q, param, t)` and `dq!(Δq, p, q, param, t)` with preallocated arrays `Δp` and `Δq`.
 
 If the Hamiltonian function is given, `dp` and `dq` are calculated automatically using
-AD (`ForwardDiff`).
+automatic differentiation (ForwardDiff.jl).
 
 !!! note
-
-
-`H` may be defined with or without time as fourth argument. If both methods are defined,
-that with 4 arguments is used.
+    `H` should be defined as `H(p, q, param, t)`. For backward compatibility, `H(p, q, param)`
+    is also supported but deprecated.
 """
 function HamiltonianProblem(
         H, p0::S, q0::T, tspan, param = NullParameters(); kwargs...) where {S, T}
@@ -124,11 +123,11 @@ function HamiltonianProblem{false}(H, p0, q0, tspan, param = NullParameters(); k
         isinplace(H, 4)
     catch e
         if e isa TooManyArgumentsError
-            throw(HamiltonainTooManyArgumentsError(e.fname, e.f))
+            throw(HamiltonianTooManyArgumentsError(e.fname, e.f))
         elseif e isa TooFewArgumentsError
-            throw(HamiltonainTooFewArgumentsError(e.fname, e.f))
+            throw(HamiltonianTooFewArgumentsError(e.fname, e.f))
         elseif e isa FunctionArgumentsError
-            throw(HamiltonainFunctionArgumentsError(e.fname, e.f))
+            throw(HamiltonianFunctionArgumentsError(e.fname, e.f))
         end
     end
 
@@ -148,11 +147,11 @@ function HamiltonianProblem{true}(H, p0, q0, tspan, param = NullParameters(); kw
         isinplace(H, 4)
     catch e
         if e isa TooManyArgumentsError
-            throw(HamiltonainTooManyArgumentsError(e.fname, e.f))
+            throw(HamiltonianTooManyArgumentsError(e.fname, e.f))
         elseif e isa TooFewArgumentsError
-            throw(HamiltonainTooFewArgumentsError(e.fname, e.f))
+            throw(HamiltonianTooFewArgumentsError(e.fname, e.f))
         elseif e isa FunctionArgumentsError
-            throw(HamiltonainFunctionArgumentsError(e.fname, e.f))
+            throw(HamiltonianFunctionArgumentsError(e.fname, e.f))
         end
     end
     let cp = ForwardDiff.GradientConfig(PhysicsTag(), p0),
