@@ -65,3 +65,4 @@ prob = HamiltonianProblem((dp, dq), p₀, q₀, (0.0, 10.0), params)
 See the `examples/` folder for more detailed examples:
 - `pendulum.jl`: Simple pendulum comparison with traditional ODE methods
 - `double_pendulum.jl`: Double pendulum with animation
+
