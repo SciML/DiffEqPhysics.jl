@@ -8,8 +8,8 @@ using ForwardDiff: ForwardDiff
 using StaticArraysCore: StaticArraysCore
 using RecipesBase: RecipesBase, @recipe, @series
 using SciMLBase: SciMLBase, NullParameters, ODEProblem, DynamicalODEFunction,
-                 isinplace, AbstractDynamicalODEProblem, numargs, DESolution,
-                 TooManyArgumentsError, TooFewArgumentsError, FunctionArgumentsError
+    isinplace, AbstractDynamicalODEProblem, numargs, DESolution,
+    TooManyArgumentsError, TooFewArgumentsError, FunctionArgumentsError
 
 include("hamiltonian.jl")
 include("plot.jl")

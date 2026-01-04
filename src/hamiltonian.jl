@@ -1,10 +1,10 @@
 const TOO_MANY_ARGUMENTS_ERROR_MESSAGE = """
-                                         All methods for the model function `H` had too many arguments. A
-                                         Hamiltonian `H` must define either `H(p, q, param)` or `H(p, q, param, t)`. This error
-                                         can be thrown if you define an Hamiltonian for example as `H(p, q, param1, param2, t)`.
-                                         For more information on the required number of arguments for the function
-                                         you were defining, consult the documentation for the `HamiltonianProblem`.
-                                         """
+All methods for the model function `H` had too many arguments. A
+Hamiltonian `H` must define either `H(p, q, param)` or `H(p, q, param, t)`. This error
+can be thrown if you define an Hamiltonian for example as `H(p, q, param1, param2, t)`.
+For more information on the required number of arguments for the function
+you were defining, consult the documentation for the `HamiltonianProblem`.
+"""
 
 struct HamiltonianTooManyArgumentsError <: Exception
     fname::String
@@ -16,17 +16,17 @@ function Base.showerror(io::IO, e::HamiltonianTooManyArgumentsError)
     print(io, "Offending function: ")
     printstyled(io, e.fname; bold = true, color = :red)
     println(io, "\nMethods:")
-    println(io, methods(e.f))
+    return println(io, methods(e.f))
 end
 
 const TOO_FEW_ARGUMENTS_ERROR_MESSAGE = """
-                                        All methods for the Hamiltonian `H` had too few arguments. A
-                                        Hamiltonian `H` must define either `H(p, q, param)` or `H(p, q, param, t)`. This error
-                                        can be thrown if you define an Hamiltonian for example as `H(p, q)`.
-                                        Note that `param` must be in the arguments list even if it's not used.
-                                        For more information on the required number of arguments for the function
-                                        you were defining, consult the documentation for the `HamiltonianProblem`.
-                                        """
+All methods for the Hamiltonian `H` had too few arguments. A
+Hamiltonian `H` must define either `H(p, q, param)` or `H(p, q, param, t)`. This error
+can be thrown if you define an Hamiltonian for example as `H(p, q)`.
+Note that `param` must be in the arguments list even if it's not used.
+For more information on the required number of arguments for the function
+you were defining, consult the documentation for the `HamiltonianProblem`.
+"""
 
 struct HamiltonianTooFewArgumentsError <: Exception
     fname::String
@@ -38,17 +38,17 @@ function Base.showerror(io::IO, e::HamiltonianTooFewArgumentsError)
     print(io, "Offending function: ")
     printstyled(io, e.fname; bold = true, color = :red)
     println(io, "\nMethods:")
-    println(io, methods(e.f))
+    return println(io, methods(e.f))
 end
 
 const ARGUMENTS_ERROR_MESSAGE = """
-                                Methods dispatches for the Hamiltonian `H` do not match the required number.
-                                A Hamiltonian `H` must define either `H(p, q, param)` or `H(p, q, param, t)`. This error
-                                can be thrown if you define an Hamiltonian for example as `H(p)`.
-                                Note that arguments must be in the arguments list even if it's not used.
-                                For more information on the required number of arguments for the function
-                                you were defining, consult the documentation for the `HamiltonianProblem`.
-                                """
+Methods dispatches for the Hamiltonian `H` do not match the required number.
+A Hamiltonian `H` must define either `H(p, q, param)` or `H(p, q, param, t)`. This error
+can be thrown if you define an Hamiltonian for example as `H(p)`.
+Note that arguments must be in the arguments list even if it's not used.
+For more information on the required number of arguments for the function
+you were defining, consult the documentation for the `HamiltonianProblem`.
+"""
 
 struct HamiltonianFunctionArgumentsError <: Exception
     fname::String
@@ -60,7 +60,7 @@ function Base.showerror(io::IO, e::HamiltonianFunctionArgumentsError)
     print(io, "Offending function: ")
     printstyled(io, e.fname; bold = true, color = :red)
     println(io, "\nMethods:")
-    println(io, methods(e.f))
+    return println(io, methods(e.f))
 end
 
 struct HamiltonianProblem{iip} <: AbstractDynamicalODEProblem end
@@ -91,31 +91,37 @@ automatic differentiation (ForwardDiff.jl).
     is also supported but deprecated.
 """
 function HamiltonianProblem(
-        H, p0::S, q0::T, tspan, param = NullParameters(); kwargs...) where {S, T}
+        H, p0::S, q0::T, tspan, param = NullParameters(); kwargs...
+    ) where {S, T}
     iip = T <: AbstractArray && !(T <: StaticArraysCore.SArray) && S <: AbstractArray &&
-          !(S <: StaticArraysCore.SArray)
-    HamiltonianProblem{iip}(H, p0, q0, tspan, param; kwargs...)
+        !(S <: StaticArraysCore.SArray)
+    return HamiltonianProblem{iip}(H, p0, q0, tspan, param; kwargs...)
 end
 
 struct PhysicsTag end
 
 function generic_derivative(q0, hami, x)
-    ForwardDiff.gradient(hami, x)
+    return ForwardDiff.gradient(hami, x)
 end
 
 function generic_derivative(q0::Number, hami, x)
-    ForwardDiff.derivative(hami, x)
+    return ForwardDiff.derivative(hami, x)
 end
 
 function HamiltonianProblem{false}(
-        (dp, dq)::Tuple{Any, Any}, p0, q0, tspan, param = NullParameters(); kwargs...)
-    return ODEProblem(DynamicalODEFunction{false}(dp, dq),
-        ArrayPartition(p0, q0), tspan, param; kwargs...)
+        (dp, dq)::Tuple{Any, Any}, p0, q0, tspan, param = NullParameters(); kwargs...
+    )
+    return ODEProblem(
+        DynamicalODEFunction{false}(dp, dq),
+        ArrayPartition(p0, q0), tspan, param; kwargs...
+    )
 end
 function HamiltonianProblem{true}(
-        (dp, dq)::Tuple{Any, Any}, p0, q0, tspan, param = NullParameters(); kwargs...)
+        (dp, dq)::Tuple{Any, Any}, p0, q0, tspan, param = NullParameters(); kwargs...
+    )
     return ODEProblem(
-        DynamicalODEFunction{true}(dp, dq), ArrayPartition(p0, q0), tspan, param; kwargs...)
+        DynamicalODEFunction{true}(dp, dq), ArrayPartition(p0, q0), tspan, param; kwargs...
+    )
 end
 
 function HamiltonianProblem{false}(H, p0, q0, tspan, param = NullParameters(); kwargs...)
@@ -155,26 +161,35 @@ function HamiltonianProblem{true}(H, p0, q0, tspan, param = NullParameters(); kw
         end
     end
     let cp = ForwardDiff.GradientConfig(PhysicsTag(), p0),
-        cq = ForwardDiff.GradientConfig(PhysicsTag(), q0), vfalse = Val(false)
+            cq = ForwardDiff.GradientConfig(PhysicsTag(), q0), vfalse = Val(false)
 
         if 4 in numargs(H)
-            dp = (Δp, p, q, param,
-                t) -> ForwardDiff.gradient!(Δp, q->-H(p, q, param, t), q, cq, vfalse)
-            dq = (Δq, p, q, param,
-                t) -> ForwardDiff.gradient!(Δq, p -> H(p, q, param, t), p, cp, vfalse)
+            dp = (
+                Δp, p, q, param,
+                t,
+            ) -> ForwardDiff.gradient!(Δp, q -> -H(p, q, param, t), q, cq, vfalse)
+            dq = (
+                Δq, p, q, param,
+                t,
+            ) -> ForwardDiff.gradient!(Δq, p -> H(p, q, param, t), p, cp, vfalse)
         else
             issue_depwarn()
-            dp = (Δp, p, q, param,
-                t) -> ForwardDiff.gradient!(Δp, q->-H(p, q, param), q, cq, vfalse)
-            dq = (Δq, p, q, param,
-                t) -> ForwardDiff.gradient!(Δq, p -> H(p, q, param), p, cp, vfalse)
+            dp = (
+                Δp, p, q, param,
+                t,
+            ) -> ForwardDiff.gradient!(Δp, q -> -H(p, q, param), q, cq, vfalse)
+            dq = (
+                Δq, p, q, param,
+                t,
+            ) -> ForwardDiff.gradient!(Δq, p -> H(p, q, param), p, cp, vfalse)
         end
         return HamiltonianProblem{true}((dp, dq), p0, q0, tspan, param; kwargs...)
     end
 end
 
 function issue_depwarn()
-    Base.depwarn(
+    return Base.depwarn(
         "Hamiltonians with 3 arguments are deprecated; please use `H(p, q, params, t)`",
-        :HamiltonianProblem)
+        :HamiltonianProblem
+    )
 end
