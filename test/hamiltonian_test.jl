@@ -2,7 +2,7 @@ using Test
 using DiffEqPhysics, ForwardDiff, OrdinaryDiffEq
 using StaticArrays, LinearAlgebra, Random
 
-test_solve(prob...) = mapreduce(p->solve(p, Tsit5(), dt = 1//2).u, ==, prob)
+test_solve(prob...) = mapreduce(p -> solve(p, Tsit5(), dt = 1 // 2).u, ==, prob)
 
 p0, q0 = rand(2)
 H(dθ, θ, p, t) = dθ / 2 - 9.8 * cos(θ)
