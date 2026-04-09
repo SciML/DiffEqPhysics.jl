@@ -1,6 +1,6 @@
 name = "DiffEqPhysics"
 uuid = "055956cb-9e8b-5191-98cc-73ae4a59e68a"
-version = "3.16.0"
+version = "3.17.0"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
 
 [deps]
@@ -21,7 +21,7 @@ ForwardDiff = "0.10, 1"
 RecipesBase = "0.7, 0.8, 1.0"
 RecursiveArrayTools = "1, 2, 3, 4"
 Reexport = "0.2, 1.0"
-SciMLBase = "1.73, 2"
+SciMLBase = "2, 3"
 StaticArraysCore = "1.4"
 julia = "1.6"
 
