@@ -42,8 +42,8 @@ using RecursiveArrayTools
 
     # Make sure the distances from the sun stay small enough
     f = (x, y, z, j) -> sqrt((x[1] - x[j])^2 + (y[1] - y[j])^2 + (z[1] - z[j])^2)
-    for i in 1:length(sol)
-        x, y, z = sol[i].x[1].x
+    for i in 1:length(sol.u)
+        x, y, z = sol.u[i].x[1].x
         @test f(x, y, z, 2) < 6
         @test f(x, y, z, 3) < 10.5
         @test f(x, y, z, 4) < 21
