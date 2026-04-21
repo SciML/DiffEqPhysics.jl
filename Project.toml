@@ -1,6 +1,6 @@
 name = "DiffEqPhysics"
 uuid = "055956cb-9e8b-5191-98cc-73ae4a59e68a"
-version = "3.16.0"
+version = "3.17.0"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
 
 [deps]
