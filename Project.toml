@@ -1,6 +1,6 @@
 name = "DiffEqPhysics"
 uuid = "055956cb-9e8b-5191-98cc-73ae4a59e68a"
-version = "3.17.0"
+version = "3.18.0"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
 
 [deps]
@@ -14,7 +14,7 @@ SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 StaticArraysCore = "1e83bf80-4336-4d27-bf5d-d5a4f845583c"
 
 [compat]
-DiffEqBase = "6"
+DiffEqBase = "6, 7"
 DiffEqCallbacks = "2.9, 3, 4"
 ExplicitImports = "1"
 ForwardDiff = "0.10, 1"
