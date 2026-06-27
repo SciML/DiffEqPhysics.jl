@@ -5,7 +5,6 @@ authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
 
 [deps]
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
-DiffEqCallbacks = "459566f4-90b8-5000-8ac3-15dfb0a30def"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 RecipesBase = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
 RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
@@ -15,8 +14,6 @@ StaticArraysCore = "1e83bf80-4336-4d27-bf5d-d5a4f845583c"
 
 [compat]
 DiffEqBase = "7"
-DiffEqCallbacks = "4.16.0"
-ExplicitImports = "1"
 ForwardDiff = "1.0.1"
 LinearAlgebra = "1"
 OrdinaryDiffEq = "7"
@@ -26,14 +23,13 @@ RecursiveArrayTools = "4"
 Reexport = "1.2.2"
 SafeTestsets = "0.1, 1"
 SciMLBase = "3.1.0"
-SciMLTesting = "1"
+SciMLTesting = "1.6"
 StaticArrays = "1"
 StaticArraysCore = "1.4.3"
 Test = "1"
 julia = "1.10"
 
 [extras]
-ExplicitImports = "7d51a73a-1435-4ff3-83d9-f097790105c7"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
@@ -43,4 +39,4 @@ StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["ExplicitImports", "LinearAlgebra", "OrdinaryDiffEq", "Random", "SafeTestsets", "SciMLTesting", "StaticArrays", "Test"]
+test = ["LinearAlgebra", "OrdinaryDiffEq", "Random", "SafeTestsets", "SciMLTesting", "StaticArrays", "Test"]
