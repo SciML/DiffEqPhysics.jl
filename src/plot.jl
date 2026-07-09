@@ -1,6 +1,4 @@
-"""
-Internal type for orbit plotting recipe.
-"""
+# Internal type for the orbit plotting recipe.
 struct OrbitPlot
     sol::Any
     body_names::Any
