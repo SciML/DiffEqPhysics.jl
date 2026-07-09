@@ -1,0 +1,17 @@
+name: Documentation
+
+on:
+  push:
+    branches:
+      - master
+      - 'release-'
+    tags: '*'
+  pull_request:
+
+jobs:
+  build:
+    uses: "SciML/.github/.github/workflows/documentation.yml@v1"
+    with:
+      coverage: true
+      coverage-directories: "src"
+    secrets: "inherit"

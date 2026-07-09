@@ -1,0 +1,8 @@
+[deps]
+DiffEqPhysics = "055956cb-9e8b-5191-98cc-73ae4a59e68a"
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
+
+[compat]
+Documenter = "1"
+OrdinaryDiffEq = "7"
