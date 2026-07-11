@@ -11,6 +11,13 @@ run_qa(
             ),
         ),
     ),
+    api_docs_kwargs = (;
+        ignore = (
+            :DEFAULT_PLOT_FUNC, :add_labels!, :plot_indices, :plottable_indices,
+            :recursive_bottom_eltype, :recursive_mean, :solplot_vecs_and_labels,
+            :tuples, :vecarr_to_vectors, :vecvec_to_mat,
+        ),
+    ),
 )
 
 # JET reports genuine errors in src/plot.jl (RecipesBase.plot has no inferable
