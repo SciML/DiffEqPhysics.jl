@@ -4,9 +4,6 @@ DiffEqPhysics = "055956cb-9e8b-5191-98cc-73ae4a59e68a"
 SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
-[sources]
-DiffEqPhysics = {path = "../.."}
-
 [compat]
 Aqua = "0.8"
 SciMLTesting = "2.1"
