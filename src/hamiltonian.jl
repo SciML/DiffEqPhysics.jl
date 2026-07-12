@@ -69,26 +69,56 @@ struct HamiltonianProblem{iip} <: AbstractDynamicalODEProblem end
     HamiltonianProblem(H, p0, q0, tspan, param=nothing; kwargs...)
     HamiltonianProblem((dp, dq), p0, q0, tspan, param=nothing; kwargs...)
 
-Define a physical system by its Hamiltonian function `H(p, q, param, t)` or the function pair
-`dp = -∂H/∂q` and `dq = ∂H/∂p`.
+Define a Hamiltonian system as a SciML dynamical ODE problem.
 
-The equations of motion are then given by `q̇ = ∂H/∂p = dq` and `ṗ  = -∂H/∂q = dp`.
+The Hamiltonian form evolves canonical momenta `p` and coordinates `q` according to
 
-The initial values for canonical momenta `p0` and coordinates `q0` may be scalars, `SArray`s, or
-other `AbstractArray`s. Their type determines whether the problem uses in-place or out-of-place
-operations.
+```math
+\\dot{q} = \\partial H / \\partial p, \\qquad
+\\dot{p} = -\\partial H / \\partial q.
+```
 
-- For scalars and `SArray`s, the derivative functions use the signatures `dp(p, q, param, t)` and
-  `dq(p, q, param, t)`.
-- For regular `AbstractArray`s, the partial derivatives use mutating signatures
-  `dp!(Δp, p, q, param, t)` and `dq!(Δq, p, q, param, t)` with preallocated arrays `Δp` and `Δq`.
+# Arguments
 
-If the Hamiltonian function is given, `dp` and `dq` are calculated automatically using
-automatic differentiation (ForwardDiff.jl).
+- `H`: Hamiltonian function. It should support `H(p, q, param, t)`. The deprecated
+  three-argument form `H(p, q, param)` is still accepted.
+- `(dp, dq)`: Pair of derivative functions, where `dp` computes `-∂H/∂q` and `dq`
+  computes `∂H/∂p`. This form skips automatic differentiation.
+- `p0`: Initial canonical momentum. Scalars, static arrays, and other
+  `AbstractArray`s are supported.
+- `q0`: Initial canonical coordinate with a shape compatible with `p0`.
+- `tspan`: Time span passed to the generated `ODEProblem`.
+- `param`: Parameter object passed through to `H`, `dp`, and `dq`. If omitted,
+  `NullParameters()` is used.
+
+# Keyword Arguments
+
+- `kwargs...`: Additional keyword arguments forwarded to the generated `ODEProblem`.
+
+# Returns
+
+- An `ODEProblem` containing a `DynamicalODEFunction`.
+
+# Interface
+
+- Scalar and static-array states use out-of-place derivative functions with
+  signatures `dp(p, q, param, t)` and `dq(p, q, param, t)`.
+- Mutable `AbstractArray` states use in-place derivative functions with signatures
+  `dp!(dp, p, q, param, t)` and `dq!(dq, p, q, param, t)`.
+- The automatic-differentiation constructor differentiates `H` with ForwardDiff.jl.
 
 !!! note
-    `H` should be defined as `H(p, q, param, t)`. For backward compatibility, `H(p, q, param)`
-    is also supported but deprecated.
+    Prefer `H(p, q, param, t)` for new code. `H(p, q, param)` is deprecated and
+    supported only for backward compatibility.
+
+# Examples
+
+```julia
+using DiffEqPhysics
+
+H(p, q, params, t) = p^2 / 2 + params.k * q^2 / 2
+prob = HamiltonianProblem(H, 1.0, 0.0, (0.0, 10.0), (; k = 2.0))
+```
 """
 function HamiltonianProblem(
         H, p0::S, q0::T, tspan, param = NullParameters(); kwargs...

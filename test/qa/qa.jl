@@ -1,5 +1,11 @@
 using SciMLTesting, DiffEqPhysics, Test
 
+const OWNED_PUBLIC_API = (:HamiltonianProblem, :orbitplot, :plot_orbits)
+
+const DEPENDENCY_REEXPORTS = Tuple(
+    setdiff(names(DiffEqPhysics), (:DiffEqPhysics, OWNED_PUBLIC_API...))
+)
+
 run_qa(
     DiffEqPhysics;
     explicit_imports = true,
@@ -10,6 +16,11 @@ run_qa(
                 :plot,                                                # RecipesBase: not public
             ),
         ),
+    ),
+    api_docs_kwargs = (;
+        rendered = true,
+        ignore = DEPENDENCY_REEXPORTS,
+        rendered_ignore = DEPENDENCY_REEXPORTS,
     ),
 )
 
