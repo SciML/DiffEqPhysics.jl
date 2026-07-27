@@ -128,14 +128,14 @@ function HamiltonianProblem(
     return HamiltonianProblem{iip}(H, p0, q0, tspan, param; kwargs...)
 end
 
-struct PhysicsTag end
+const FORWARDDIFF_BACKEND = AutoForwardDiff()
 
 function generic_derivative(q0, hami, x)
-    return ForwardDiff.gradient(hami, x)
+    return gradient(hami, FORWARDDIFF_BACKEND, x)
 end
 
 function generic_derivative(q0::Number, hami, x)
-    return ForwardDiff.derivative(hami, x)
+    return derivative(hami, FORWARDDIFF_BACKEND, x)
 end
 
 function HamiltonianProblem{false}(
@@ -190,28 +190,27 @@ function HamiltonianProblem{true}(H, p0, q0, tspan, param = NullParameters(); kw
             throw(HamiltonianFunctionArgumentsError(e.fname, e.f))
         end
     end
-    let cp = ForwardDiff.GradientConfig(PhysicsTag(), p0),
-            cq = ForwardDiff.GradientConfig(PhysicsTag(), q0), vfalse = Val(false)
+    let backend = FORWARDDIFF_BACKEND
 
         if 4 in numargs(H)
             dp = (
                 Δp, p, q, param,
                 t,
-            ) -> ForwardDiff.gradient!(Δp, q -> -H(p, q, param, t), q, cq, vfalse)
+            ) -> gradient!(q -> -H(p, q, param, t), Δp, backend, q)
             dq = (
                 Δq, p, q, param,
                 t,
-            ) -> ForwardDiff.gradient!(Δq, p -> H(p, q, param, t), p, cp, vfalse)
+            ) -> gradient!(p -> H(p, q, param, t), Δq, backend, p)
         else
             issue_depwarn()
             dp = (
                 Δp, p, q, param,
                 t,
-            ) -> ForwardDiff.gradient!(Δp, q -> -H(p, q, param), q, cq, vfalse)
+            ) -> gradient!(q -> -H(p, q, param), Δp, backend, q)
             dq = (
                 Δq, p, q, param,
                 t,
-            ) -> ForwardDiff.gradient!(Δq, p -> H(p, q, param), p, cp, vfalse)
+            ) -> gradient!(p -> H(p, q, param), Δq, backend, p)
         end
         return HamiltonianProblem{true}((dp, dq), p0, q0, tspan, param; kwargs...)
     end

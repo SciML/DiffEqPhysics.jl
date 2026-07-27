@@ -67,8 +67,8 @@ prob = HamiltonianProblem((dp, dq), p₀, q₀, (0.0, 10.0), params)
 
 ## Plotting Orbits
 
-For solutions of N-body-style problems, [`plot_orbits`](@ref) and [`orbitplot`](@ref) draw
-the trajectory of each body.
+For solutions of N-body-style problems, [`plot_orbits`](@ref) and [`orbitplot`](@ref) create
+RecipesBase inputs that a compatible plotting backend can render as body trajectories.
 
 ## Public API
 

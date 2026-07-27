@@ -5,9 +5,9 @@ makedocs(
     authors = "Chris Rackauckas",
     modules = [DiffEqPhysics],
     clean = true,
-    doctest = false,
-    linkcheck = false,
+    doctest = true,
     warnonly = false,
+    checkdocs = :exports,
     format = Documenter.HTML(
         canonical = "https://docs.sciml.ai/DiffEqPhysics/stable/"
     ),

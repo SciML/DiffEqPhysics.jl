@@ -17,6 +17,11 @@ prob_1 = DynamicalODEProblem(acc, vel, p0, q0, (0.0, 10.0))
     @test test_solve(prob1, prob_1)
 end
 
+sol = solve(prob_1, Tsit5(), dt = 1 // 2)
+@test !isnothing(orbitplot(sol; dim = 2))
+@test !isnothing(plot_orbits(sol; dim = 3))
+@test_throws AssertionError orbitplot(sol; dim = 1)
+
 p0 = @SVector rand(2)
 q0 = @SVector rand(2)
 H4(dθ, θ, p, t) = dθ[1] / 2 + dθ[2] / 2 - 9.8 * cos(θ[1]) - 9.8 * cos(θ[2]) + t
