@@ -6,7 +6,6 @@ makedocs(
     modules = [DiffEqPhysics],
     clean = true,
     doctest = true,
-    warnonly = false,
     checkdocs = :exports,
     format = Documenter.HTML(
         canonical = "https://docs.sciml.ai/DiffEqPhysics/stable/"
