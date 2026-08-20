@@ -6,6 +6,7 @@ authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
 [deps]
 DifferentiationInterface = "a0c0ee7d-e4b9-4e03-894e-1c5f64a51d63"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
+PrecompileTools = "aea7be01-6a6a-4083-8856-8a6e6704d82a"
 RecipesBase = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
 RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
@@ -14,6 +15,7 @@ StaticArraysCore = "1e83bf80-4336-4d27-bf5d-d5a4f845583c"
 [compat]
 DifferentiationInterface = "0.7.20"
 ForwardDiff = "1.4.1"
+PrecompileTools = "1"
 LinearAlgebra = "1"
 OrdinaryDiffEq = "7"
 Random = "1"
